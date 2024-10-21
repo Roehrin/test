@@ -32,13 +32,8 @@
     <main id="container">
       <canvas id="gl1"></canvas>
     </main>
-    <footer>
+	<footer>
       <label id="colormaps"></label>
-      <p>
-      <textarea id="scriptText" name="customText" rows="8" cols="60">
-let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A: [0, 64, 64],&#10; I: [0, 85, 255],&#10;};&#10;
-</textarea>
-      &nbsp;<button id="custom">custom</button>&nbsp;
     </footer>
   </body>
 </html>
@@ -78,12 +73,6 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
     else
       nv1.setCrosshairWidth(1);
   }
-  document.getElementById("custom").addEventListener("click", doCustom);
-  function doCustom() {
-    var val = document.getElementById("scriptText").value;
-    val += ';let key = "Custom"; nv1.addColormap(key, cmap); nv1.volumes[0].colormap = key;nv1.updateGLVolume();';
-    val && eval(val);
-  }
   document.getElementById("saveBmp").addEventListener("click", doSaveBmp);
   function doSaveBmp() {
     nv1.saveScene("ScreenShot.png");
@@ -109,6 +98,6 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
     btn.onclick = function () {
       nv1.setColormap(nv1.volumes[0].id, cmaps[i]);
     };
-    cmapEl.appendChild(btn);
+	cmapEl.appendChild(btn);
   }
 </script>
