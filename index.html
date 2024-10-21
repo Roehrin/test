@@ -55,7 +55,7 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
       url: "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale5_dseg.nii.gz", 
       colormap: "random",
       visible: true,
-      opacity: .5
+      opacity: .1
     }
   ];
   var slider = document.getElementById("gammaSlider");
@@ -103,8 +103,9 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
   nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
   nv1.opts.isColorbar = true;
   nv1.loadMeshes([
-        { url: "https://roehrin.github.io/test/src/graph_example_adjacency.jcon" },
+		{ url: "https://roehrin.github.io/test/src/seeg_mesh_test.jcon" }
 		]);
+  nv1.opts.showLegend = false;
   let cmaps = nv1.colormaps();
   let cmapEl = document.getElementById("colormaps");
   for (let i = 0; i < cmaps.length; i++) {
