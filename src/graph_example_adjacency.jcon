@@ -7,7 +7,7 @@
 	"nodeScale": 3,
 	"edgeColormap": "warm",
 	"edgeColormapNegative": "winter",
-	"edgeMin": 2,
+	"edgeMin": 0,
 	"edgeMax": 6,
 	"edgeScale": 1,
 	"nodes": {
@@ -18,8 +18,8 @@
 		"Color": [2, 2, 3, 4],
 		"Size": [2, 2, 3, 4]
 	},
-	"edges": [1, 2, -3, 4,
-		0, 1, 0, 6,
+	"edges": [1, 0, 0,0,
+		0, 1, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1
 	]
