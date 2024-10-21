@@ -46,8 +46,8 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
   var volumeList1 = [
     {
-      url: "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale2_dseg.nii.gz", 
-      colormap: "random",
+      url: "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz", 
+      colormap: "gray",
       visible: true,
       opacity: 1
     }
@@ -93,7 +93,7 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
   nv1.loadVolumes(volumeList1);
   nv1.setClipPlane([-0.0, 0, 40]);
   //thickness of slab. Value 0..1.73 (cube opposite corner length is sqrt(3)).
-  nv1.setClipPlaneThick(1/173)
+  nv1.setClipPlaneThick(1.73)
   nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
   nv1.opts.isColorbar = true;
   nv1.opts.isOrientCube = true;
@@ -102,7 +102,7 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
 		]);
   nv1.opts.showLegend = false;
   // 1 max transparency of the 3D render
-  nv1.opts.meshXRay = .3
+  nv1.opts.meshXRay = .2
   let cmaps = nv1.colormaps();
   let cmapEl = document.getElementById("colormaps");
   for (let i = 0; i < cmaps.length; i++) {
