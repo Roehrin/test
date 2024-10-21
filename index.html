@@ -45,21 +45,20 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
 </html>
 <script type="module" async>
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
-  async function addVolumeFromFiles(f) {
-          console.log('attempting to open ', f[0].name)
-          console.log('details', f[0])
-          nv1.loadFromFile(f[0])
-      }
-  openBtn.onclick = function () {
-	let input = document.createElement('input');
-	input.style.display = 'none';
-	input.type = 'file'
-	document.body.appendChild(input);
-	input.onchange = function (event) {
-	  addVolumeFromFiles(event.target.files)
-	}
-	input.click()
-  }
+  var volumeList1 = [
+    { 
+      url: "./src/sub-template_desc-brain_T1w.nii.gz",
+      colormap: "gray",
+      visible: true,
+      opacity: 1
+    }, 
+    {
+      url: "./src/sub-template_atlas-L2018_res-scale5_dseg.nii.gz", 
+      colormap: "random",
+      visible: true,
+      opacity: .5
+    }
+  ];
   var slider = document.getElementById("gammaSlider");
   slider.oninput = function () {
     nv1.setGamma(this.value * 0.01);
