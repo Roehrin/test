@@ -45,17 +45,11 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
 <script type="module" async>
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
   var volumeList1 = [
-    { 
-      url: "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz",
-      colormap: "gray",
-      visible: true,
-      opacity: 1
-    }, 
     {
-      url: "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale5_dseg.nii.gz", 
+      url: "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale2_dseg.nii.gz", 
       colormap: "random",
       visible: true,
-      opacity: .5
+      opacity: 1
     }
   ];
   var slider = document.getElementById("gammaSlider");
@@ -115,7 +109,7 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
     let btn = document.createElement("button");
     btn.innerHTML = cmaps[i];
     btn.onclick = function () {
-      nv1.setColormap(nv1.volumes[1].id, cmaps[i]);
+      nv1.setColormap(nv1.volumes[0].id, cmaps[i]);
     };
     cmapEl.appendChild(btn);
   }
