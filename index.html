@@ -108,7 +108,7 @@ let cmap = {&#10; R: [0, 255, 0],&#10; G: [0, 0, 255],&#10; B: [0, 0, 0],&#10; A
 		]);
   nv1.opts.showLegend = false;
   // 1 max transparency of the 3D render
-  nv1.opts.meshXRay = 100;
+  nv1.opts.meshXRay = .3
   let cmaps = nv1.colormaps();
   let cmapEl = document.getElementById("colormaps");
   for (let i = 0; i < cmaps.length; i++) {
