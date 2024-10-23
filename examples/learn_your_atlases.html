@@ -34,10 +34,7 @@
           <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender"
             >A+C+S+R</a
           >
-          <a class="viewBtn divider dropdown-item-checked" id="Colorbar"
-            >Colorbar</a
-          >
-          <a class="viewBtn" id="Radiological">Radiological</a>
+          <a class="viewBtn divider" id="Radiological">Radiological</a>
           <a class="viewBtn dropdown-item-checked" id="Crosshair"
             >Render Crosshair</a
           >
@@ -46,41 +43,20 @@
       </div>
       <div class="dropdown">
         <button class="dropbtn">
-          Color
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="!Gray">Gray</a>
-          <a class="viewBtn" id="!Plasma">Plasma</a>
-          <a class="viewBtn" id="!Viridis">Viridis</a>
-          <a class="viewBtn" id="!Inferno">Inferno</a>
-		  <a class="viewBtn" id="!Random">Random</a>
-          <a class="viewBtn divider dropdown-item-checked" id="BackColor">
-		  Dark Background
-		  </a>
-        </div>
-      </div>
-      <div class="dropdown">
-        <button class="dropbtn">
           Script
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="_Brain">Brain</a> 
+		  <a class="viewBtn dropdown-item-checked" id="_AAL">AAL</a>
           <a class="viewBtn" id="_Lausanne1">Lausanne1</a>
           <a class="viewBtn" id="_Lausanne2">Lausanne2</a>
-          <a class="viewBtn" id="_Lausanne5">Lausanne5</a>
-          <a class="viewBtn" id="_Spconn">connectome</a>
-		  <a class="viewBtn" id="_SEEGconn">SEEG</a>
-		  <a class="viewBtn" id="_ROI">SEEG</a>
-		  <a class="viewBtn" id="_ROIconn">SEEG</a>
         </div>
       </div>
     </header>
     <main id="container">
       <canvas id="gl1"></canvas>
     </main>
-    <footer id="intensity">&nbsp;</footer>
+    <footer id="locationx"><span id="hover"></span>&nbsp;<span id="location"></span></footer>
   </body>
 </html>
 <script type="module" async>
@@ -90,18 +66,17 @@
     "ontouchstart" in window ||
     navigator.maxTouchPoints > 0 ||
     navigator.msMaxTouchPoints > 0;
-  function handleIntensityChange(data) {
-    document.getElementById("intensity").innerHTML =
-      "&nbsp;&nbsp;" + data.string;
+  function handleLocationChange(data) {
+        document.getElementById("location").innerHTML = "-".repeat(10) + ' Clicked: '+  cmap.labels[data.values[0].value]
   }
   var nv1 = new niivue.Niivue({
     logging: true,
     dragAndDropEnabled: false,
     // backColor: [0, 0, 0, 1],
     show3Dcrosshair: true,
-    onLocationChange: handleIntensityChange,
+    onLocationChange: handleLocationChange,
   });
-  nv1.opts.isColorbar = true;
+  nv1.opts.isColorbar = false;
   nv1.setRadiologicalConvention(false);
   nv1.attachTo("gl1");
   nv1.setClipPlane([0.3, 270, 0]);
@@ -112,8 +87,25 @@
   nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
   nv1.graph.autoSizeMultiplanar = true;
   nv1.graph.opacity = 1.0;
-  var volumeList1 = [{ url: "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz"}];
+  var volumeList1 = [{ url: "https://niivue.github.io/niivue/images/aal.nii.gz"},{ url: "https://niivue.github.io/niivue/images/aal.nii.gz"}];
   await nv1.loadVolumes(volumeList1);
+  async function fetchJSON(fnm) {
+        const response = await fetch(fnm)
+        const js = await response.json()
+        return js
+      }
+  var cmap = await fetchJSON("https://niivue.github.io/niivue/images/aal.json")
+  nv1.volumes[0].setColormapLabel(cmap)
+  var opacity_lvl = 120/255
+  nv1.setOpacity(0, opacity_lvl)
+  nv1.volumes[1].setColormapLabel(cmap)
+  nv1.setInterpolation(true) // nearest neighbour interp because of the atlases
+  let clut = nv1.volumes[1].colormapLabel.lut
+      //make all regions translucent
+  for (let a = 3+4; a < clut.length ; a += 4) {
+        clut[a] = 0
+  }
+  nv1.updateGLVolume()
   function toggleGroup(id) {
     let buttons = document.getElementsByClassName("viewBtn");
     let char0 = id.charAt(0);
@@ -140,12 +132,6 @@
     }
     if (event.target.id === "ShowHeader") {
       alert(nv1.volumes[0].hdr.toFormattedString());
-      return;
-    }
-    if (event.target.id === "Colorbar") {
-      nv1.opts.isColorbar = !nv1.opts.isColorbar;
-      event.srcElement.classList.toggle("dropdown-item-checked");
-      nv1.drawScene();
       return;
     }
     if (event.target.id === "Radiological") {
@@ -199,77 +185,59 @@
       event.srcElement.classList.toggle("dropdown-item-checked");
       return;
     }
-	if (event.target.id === "_Spconn") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.showLegend = true;
-	  nv1.opts.meshXRay = .3
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz";
-      await nv1.loadVolumes(volumeList1);
-      nv1.loadMeshes([
-        {url: "https://roehrin.github.io/test/src/graph_example_adjacency.jcon"}
-      ]);
-      toggleGroup(event.target.id);
-    } else if (event.target.id === "_SEEGconn") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.showLegend = false;
-	  nv1.opts.meshXRay = .3
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz";
-      await nv1.loadVolumes(volumeList1);
-      nv1.loadMeshes([
-        {url: "https://roehrin.github.io/test/src/seeg_mesh_test.jcon"}
-      ]);
-      toggleGroup(event.target.id);
-    } else if (event.target.id === "_ROI") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.showLegend = false;
-	  nv1.opts.meshXRay = .3
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz";
-      await nv1.loadVolumes(volumeList1);
-      nv1.loadMeshes([
-        {url: "https://roehrin.github.io/test/src/Lausanne2_ROI.jcon"}
-      ]);
-      toggleGroup(event.target.id);
-    } else if (event.target.id === "_ROIconn") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.showLegend = false;
-	  nv1.opts.meshXRay = .3
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz";
-      await nv1.loadVolumes(volumeList1);
-      nv1.loadMeshes([
-        {url: "https://roehrin.github.io/test/src/Lausanne2_ROI_n_edges.jcon"}
-      ]);
-      toggleGroup(event.target.id);
-    } else if (event.target.id === "_Brain") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.meshXRay = 0
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz";
-      nv1.loadVolumes(volumeList1);
-      toggleGroup(event.target.id);
+	// Load atlases
+	// Lausanne scales are redundant so could optimise the code here
+	if (event.target.id.startsWith("_Lausanne")) {
+		let root = "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale";
+		let ending_MR = "_dseg.nii.gz";
+		let ending_LUT = "_FreeSurferColorLUT.json";
+		let MR_fname = root + event.target.id.slice(-1) + ending_MR;
+		let LUT_fname = root + event.target.id.slice(-1) + ending_LUT;
+		volumeList1[0].url = MR_fname;
+		volumeList1[1].url = MR_fname;
+		cmap = await fetchJSON(LUT_fname)
+		//clut = nv1.volumes[1].colormapLabel.lut
+		await nv1.loadVolumes(volumeList1);
+		nv1.volumes[0].setColormapLabel(cmap)
+		nv1.volumes[1].setColormapLabel(cmap)
+		nv1.setOpacity(0, opacity_lvl)
+		toggleGroup(event.target.id);
+		nv1.updateGLVolume();
+    } else if (event.target.id === "_AAL") {
+      volumeList1[0].url = "https://niivue.github.io/niivue/images/aal.nii.gz";
+	  volumeList1[1].url = "https://niivue.github.io/niivue/images/aal.nii.gz";
+      cmap = await fetchJSON("https://niivue.github.io/niivue/images/aal.json")
+	  await nv1.loadVolumes(volumeList1);
+	  nv1.volumes[0].setColormapLabel(cmap);
+	  nv1.volumes[1].setColormapLabel(cmap)
+	  nv1.setOpacity(0, opacity_lvl)
       nv1.updateGLVolume();
-    } else if (event.target.id === "_Lausanne1") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.meshXRay = 0
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale1_dseg.nii.gz";
-      nv1.loadVolumes(volumeList1);
-      toggleGroup(event.target.id);
-      nv1.updateGLVolume();
-    } else if (event.target.id === "_Lausanne2") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.meshXRay = 0
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale2_dseg.nii.gz";
-      nv1.loadVolumes(volumeList1);
-      toggleGroup(event.target.id);
-      nv1.updateGLVolume();
-    } else if (event.target.id === "_Lausanne5") {
-	  nv1.meshes = []; //close open meshes
-	  nv1.opts.meshXRay = 0
-      volumeList1[0].url = "https://roehrin.github.io/test/src/sub-template_atlas-L2018_res-scale5_dseg.nii.gz";
-      nv1.loadVolumes(volumeList1);
-      toggleGroup(event.target.id);
-      nv1.updateGLVolume();
-    }//example image
+    } //example image
   } // onButtonClick()
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++)
-    buttons[i].addEventListener("click", onButtonClick, false);
+  buttons[i].addEventListener("click", onButtonClick, false);
+  // handle hover on the atlases
+  let activeIdx = - 1
+  gl1.addEventListener("mousemove", (e) => {
+	let pos = nv1.getNoPaddingNoBorderCanvasRelativeMousePosition(e, nv1.gl.canvas)
+	const frac = nv1.canvasPos2frac([pos.x  * nv1.uiData.dpr, pos.y  * nv1.uiData.dpr])
+	if (frac[0] >= 0) {
+		let mm = nv1.frac2mm(frac)
+		//console.log(mm[0])
+		const vox = nv1.volumes[1].mm2vox(mm)
+		let idx = nv1.volumes[1].getValue(vox[0], vox[1], vox[2])
+		if ((isFinite(idx)) && (idx !== activeIdx)) {
+			document.getElementById("hover").innerHTML = 'Hover: '+ nv1.volumes[1].colormapLabel.labels[idx]
+			if (idx > 0){
+				activeIdx = idx
+				let lut = clut.slice() //nv1.volumes[1].colormapLabel.lut
+				lut[(idx * 4)+3] = 255
+				nv1.volumes[1].colormapLabel.lut = lut.slice()
+				nv1.updateGLVolume()
+			}
+			
+		}	
+	}
+  })
 </script>
