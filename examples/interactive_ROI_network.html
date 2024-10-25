@@ -12,6 +12,23 @@
     <header>
 	<h2>Investigate the structural connectome</h2>
 	<div class="dropdown">
+		<button class="dropbtn" data-toggle="dropdown">
+		  View
+		  <i class="fa fa-caret-down"></i>
+		</button>
+		<div class="dropdown-content">
+		  <a href="#" class="viewBtn" id="|Axial">Axial</a>
+		  <a class="viewBtn" id="|Sagittal">Sagittal</a>
+		  <a class="viewBtn" id="|Coronal">Coronal</a>
+		  <a class="viewBtn" id="|Render">Render</a>
+		  <a class="viewBtn" id="|MultiPlanar">A+C+S</a>
+		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a		  >
+		  <a class="viewBtn divider dropdown-item-checked" id="Colorbar">Colorbar</a>
+		  <a class="viewBtn" id="Radiological">Radiological</a>
+		  <a class="viewBtn" id="ClipPlane">Render Clip Plane</a>
+		</div>
+    </div>
+	<div class="dropdown">
         <button class="dropbtn">
           Edge Color
           <i class="fa fa-caret-down"></i>
@@ -35,6 +52,20 @@
 		  <a class="viewBtn" id="!NdRandom">Random</a>
         </div>
     </div>
+	<div class="dropdown">
+        <button class="dropbtn">
+          Script
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a class="viewBtn dropdown-item-checked" id="_SC">fiber count and strength</a> 
+          <a class="viewBtn" id="_SClog">log fiber count and strength</a> 
+          <a class="viewBtn" id="_SCCC">fiber count and clustering coeff</a> 
+          <a class="viewBtn" id="_SClogCC">log fiber count and clustering coeff</a> 
+		  <a class="viewBtn" id="_SCNE">fiber count and nodal eff</a> 
+          <a class="viewBtn" id="_SClogNE">log fiber count and nodal eff</a> 
+        </div>
+      </div>
   </header>
     <main id="container">
       <canvas id="gl1"></canvas>
@@ -50,7 +81,8 @@
     <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
     <button id="reset">reset</button><br>
 	<p>Select regions of interest<br>
-	<label id="ROI_btns"></label>
+	Right hemisphere:<label id="rhROI_btns"></label><br>
+	Left hemisphere:<label id="lhROI_btns"></label>
 	</footer>
   </body>
 </html>
@@ -67,24 +99,77 @@
   function toggleGroup(id) {
     let buttons = document.getElementsByClassName("viewBtn");
     let char0 = id.charAt(0);
+	let char03 = id.slice(0,3);
     for (let i = 0; i < buttons.length; i++) {
-      if (buttons[i].id.charAt(0) !== char0) continue;
-      buttons[i].classList.remove("dropdown-item-checked");
-      if (buttons[i].id === id)
-        buttons[i].classList.add("dropdown-item-checked");
+	  if (buttons[i].id.charAt(0) !== char0) continue;
+	  if ((char03 === "!Ed" || char03 === "!Nd") && (buttons[i].id.slice(0,3) !== char03)) continue;
+	  buttons[i].classList.remove("dropdown-item-checked");
+	  if (buttons[i].id === id)
+		buttons[i].classList.add("dropdown-item-checked");
     }
   } // toggleGroup()
   async function onButtonClick(event) {
+  if (event.target.id.charAt(0) === "|") {
+      //sliceType
+      if (event.target.id === "|Axial") nv1.setSliceType(nv1.sliceTypeAxial);
+      if (event.target.id === "|Coronal")
+        nv1.setSliceType(nv1.sliceTypeCoronal);
+      if (event.target.id === "|Sagittal")
+        nv1.setSliceType(nv1.sliceTypeSagittal);
+      if (event.target.id === "|Render") nv1.setSliceType(nv1.sliceTypeRender);
+      if (event.target.id === "|MultiPlanar") {
+        nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.NEVER;
+        nv1.setSliceType(nv1.sliceTypeMultiplanar);
+      }
+      if (event.target.id === "|MultiPlanarRender") {
+        nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
+        nv1.setSliceType(nv1.sliceTypeMultiplanar);
+      }
+      toggleGroup(event.target.id);
+  } //sliceType
+  if (event.target.id === "Colorbar") {
+      nv1.opts.isColorbar = !nv1.opts.isColorbar;
+      event.srcElement.classList.toggle("dropdown-item-checked");
+      nv1.drawScene();
+      return;
+    }
+  if (event.target.id === "Radiological") {
+      nv1.opts.isRadiologicalConvention = !nv1.opts.isRadiologicalConvention;
+      event.srcElement.classList.toggle("dropdown-item-checked");
+      nv1.drawScene();
+      return;
+    }
+  if (event.target.id === "ClipPlane") {
+      if (nv1.scene.clipPlaneDepthAziElev[0] > 1)
+        nv1.setClipPlane([0.3, 270, 0]);
+      else nv1.setClipPlane([2, 270, 0]);
+      nv1.drawScene();
+      return;
+    }
   if (event.target.id.charAt(0) === "!") {
       // set color scheme
       //nv1.volumes[0].colormap = cmaps[i];
 	  if (event.target.id.startsWith("!Ed")){
 		nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", event.target.id.substr(3))
-	  } else {https://niivue.github.io/niivue/devdocs/index.html
+	  } else {
 	    nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", event.target.id.substr(3))
 	  }
       toggleGroup(event.target.id);
       return;
+    }
+  if (event.target.id.charAt(0) === "_") {
+	  nv1.meshes = []; //close open meshes
+	  // "_SC""_SClog""_SCCC""_SClogCC""_SCNE""_SClogNE"
+	  if (event.target.id === "_SC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon"}
+	  else if (event.target.id === "_SClog"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber"}
+	  else if (event.target.id === "_SCCC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon"}
+	  else if (event.target.id === "_SClogCC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC"}
+	  else if (event.target.id === "_SCNE"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE"}
+	  else if (event.target.id === "_SClogNE"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon"}
+      nv1.loadMeshes([
+        {url: fname}
+      ]);
+      toggleGroup(event.target.id);
     }
   }
   // Update the current slider value (each time you drag the slider handle)
@@ -134,7 +219,8 @@
   nv1.setClipPlaneThick(1.73)
   nv1.updateGLVolume()
   let nodes = nv1.meshes[0].nodes;
-  let ROI_btns = document.getElementById("ROI_btns");
+  let rhROI_btns = document.getElementById("rhROI_btns");
+  let lhROI_btns = document.getElementById("lhROI_btns");
   for (let i = 0; i < nodes.length; i++) {
 	let btn = document.createElement("button");
 		btn.innerHTML = nodes[i].name;
@@ -143,16 +229,18 @@
 			let dPos = [nodes[i].x, nodes[i].y, nodes[i].z];
 			dPos = nv1.volumes[0].mm2vox(dPos);
 			const xhPos = nv1.frac2vox(nv1.scene.crosshairPos).slice(0, 3)
-			//const xhPos = nv1.frac2mm([nv1.scene.crosshairPos[0], nv1.scene.crosshairPos[1], nv1.scene.crosshairPos[2]]).slice(0, 3);
 			console.log(xhPos)
 			for (let j = 0; j < dPos.length; j++){
 			  dPos[j] = dPos[j] - xhPos[j];
 			}
-			//const vox = nv1.volumes[0].mm2vox(dPos);
-			//console.log(vox)
 			nv1.moveCrosshairInVox(dPos[0], dPos[1], dPos[2])
 		};
-	ROI_btns.appendChild(btn);
+	if (nodes[i].name.startsWith("R ")){
+		rhROI_btns.appendChild(btn)
+	} else{
+		lhROI_btns.appendChild(btn)
+	}
+	
   }
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++)
