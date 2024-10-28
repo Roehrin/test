@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>4D Meshes</title>
-    <link rel="stylesheet" href="light.css" />
+    <link rel="stylesheet" href="../niivue.css" />
   </head>
   <body>
     <noscript>
@@ -59,19 +59,19 @@
 	isColorbar: true,
 	showLegend: false,
     backColor: [0.9, 0.9, 1, 1],
+	meshXRay: .2,
   });
   nv1.setSliceType(nv1.sliceTypeRender);
   nv1.attachTo("gl1");
   var meshLayersList1 = [
     {
       url: "https://roehrin.github.io/test/src/leadfield.gii",
-	  colormap: "warm",
-	  colormapNegative: "winter",
-	  cal_min: 0.0000001,
-      cal_max: 0.0001,
+	  colormap: "red",
+	  colormapNegative: "blue",
+	  cal_min: 0.1,
+      cal_max: 15,
       useNegativeCmap: true,
       opacity: 0.9,
-	  meshXRay: .2,
     },
   ];
   await nv1.loadMeshes([
