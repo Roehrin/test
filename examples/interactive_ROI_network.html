@@ -10,7 +10,7 @@
   <body>
     <noscript>niivue requires JavaScript.</noscript>
     <header>
-	<h2>Investigate the structural connectome</h2>
+	<h3>Investigate the structural connectome</h3>
 	<div class="dropdown">
 		<button class="dropbtn" data-toggle="dropdown">
 		  View
@@ -21,8 +21,8 @@
 		  <a class="viewBtn" id="|Sagittal">Sagittal</a>
 		  <a class="viewBtn" id="|Coronal">Coronal</a>
 		  <a class="viewBtn" id="|Render">Render</a>
-		  <a class="viewBtn" id="|MultiPlanar">A+C+S</a>
-		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a		  >
+		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanar">A+C+S</a>
+		  <a class="viewBtn" id="|MultiPlanarRender">A+C+S+R</a		  >
 		  <a class="viewBtn divider dropdown-item-checked" id="Colorbar">Colorbar</a>
 		  <a class="viewBtn" id="Radiological">Radiological</a>
 		  <a class="viewBtn" id="ClipPlane">Render Clip Plane</a>
@@ -34,7 +34,7 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked"" id="!EdPlasma">Plasma</a>
+          <a class="viewBtn dropdown-item-checked" id="!EdPlasma">Plasma</a>
           <a class="viewBtn" id="!EdViridis">Viridis</a>
           <a class="viewBtn" id="!EdInferno">Inferno</a>
 		  <a class="viewBtn" id="!EdRandom">Random</a>
@@ -46,7 +46,7 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked"" id="!NdPlasma">Plasma</a>
+          <a class="viewBtn dropdown-item-checked" id="!NdPlasma">Plasma</a>
           <a class="viewBtn" id="!NdViridis">Viridis</a>
           <a class="viewBtn" id="!NdInferno">Inferno</a>
 		  <a class="viewBtn" id="!NdRandom">Random</a>
@@ -68,22 +68,35 @@
       </div>
   </header>
     <main id="container">
-      <canvas id="gl1"></canvas>
+		<div class="row">
+			<div class="column left">
+				Select regions of interest: <br>
+				(show: <input type="radio" id="showNd" name="subNetwrk" value="showNode" checked>
+			 	<label for="rbShow">node</label>
+			  	<input type="radio" id="showSubNd" name="subNetwrk" value="showNodeSubNet">
+			  	<label for="rbSubNet">node sub-network</label>)<br>
+				Right hemisphere:<br>
+				<label id="rhROI_btns"></label><br>
+				<p>
+				Left hemisphere:<br>
+				<label id="lhROI_btns"></label>
+			</div>
+			<div class="column left">
+				<canvas id="gl1" width="900" height="700" style="width: 900px; height: 100%;"></canvas>
+			</div>
+		</div>
     </main>
-	<footer>
+  <footer>
 	<label for="edgeSlider">Edge Size</label>
-    <input type="range" min="0" max="50" value="30" class="slider" id="edgeSlider" />
+    <input type="range" min="0" max="100" value="30" class="slider" id="edgeSlider" />
 	<label for="EdThreshSlider">Edge Threshold</label>
     <input type="range" min="0" max="99" value="0" class="slider" id="EdThreshSlider" />
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
     <label for="NdThreshSlider">Node Threshold</label>
     <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
-    <button id="reset">reset</button><br>
-	<p>Select regions of interest<br>
-	Right hemisphere:<label id="rhROI_btns"></label><br>
-	Left hemisphere:<label id="lhROI_btns"></label>
-	</footer>
+    <button id="reset">reset</button>
+  </footer>
   </body>
 </html>
 <script type="module" async>
@@ -96,6 +109,7 @@
       opacity: 1
     }
   ];
+  var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon"
   function toggleGroup(id) {
     let buttons = document.getElementsByClassName("viewBtn");
     let char0 = id.charAt(0);
@@ -108,69 +122,134 @@
 		buttons[i].classList.add("dropdown-item-checked");
     }
   } // toggleGroup()
+  function updateMeshes() {
+	// apply current threshold (setMeshProperty updates the volume every time it is called, slowers everything)
+	//var startTime = performance.now()
+	nv1.meshes[0].setProperty("edgeScale", edgeSlider.value*.1, nv1.gl)
+	nv1.meshes[0].setProperty("nodeScale", nodeSlider.value*.1, nv1.gl)
+	nv1.meshes[0].setProperty("nodeMinColor", NdThreshSlider.value * .01, nv1.gl)
+	nv1.meshes[0].setProperty("edgeMin", EdThreshSlider.value * .01, nv1.gl)
+	nv1.meshes[0].setProperty("edgeColormap", EdColormap, nv1.gl)
+	nv1.meshes[0].setProperty("nodeColormap", NdColormap, nv1.gl)
+	nv1.updateGLVolume()
+	nv1.onMeshPropertyChanged(0, "edgeScale", edgeSlider.value*.1)
+	nv1.onMeshPropertyChanged(0, "nodeScale", nodeSlider.value*.1)
+	nv1.onMeshPropertyChanged(0, "nodeMinColor", NdThreshSlider.value * .01)
+	nv1.onMeshPropertyChanged(0, "edgeMin", EdThreshSlider.value * .01)
+	nv1.onMeshPropertyChanged(0, "edgeColormap", EdColormap)
+	nv1.onMeshPropertyChanged(0, "nodeColormap", NdColormap)
+	//var endTime = performance.now()
+	//console.log(`Call to doSomething took ${endTime - startTime} milliseconds`)
+  } // updateMeshes
+  function showSubNetwork(node_idx){
+	console.log('sub network of node ' + node_idx + ' wanted, to be done.')
+	nv1.meshes = []; // close any open mesh
+	// deep copy of the original edges of the connectome
+	let currentEdges = JSON.parse(JSON.stringify(nv1.origConnectome.edges));
+	let ConnectedNodes = []; // init list of connected nodes
+	let nodes = nv1.origConnectome.nodes;
+	// set to zero all edges not connected to the node of interest
+	for (let i = 0; i < currentEdges.length; i++) {
+		// if edge is already zero continue
+		if (currentEdges[i].colorValue === 0){ continue}
+		if ((currentEdges[i].first != node_idx) && (currentEdges[i].second != node_idx) ){
+			currentEdges[i].colorValue = 0;
+			continue
+		}
+		// check if first correspond to the node of interest, if not add it otherwise add the second
+		// (as it means the second is the node of interest)
+		if (nodes[currentEdges[i].first].name != nodes[node_idx].name){
+			ConnectedNodes.push(nodes[currentEdges[i].first].name);
+		} else {ConnectedNodes.push(nodes[currentEdges[i].second].name);}
+	}
+	// deep copy of the original connectome to modify its edges
+	let newConnectome = JSON.parse(JSON.stringify(nv1.origConnectome));
+	newConnectome.edges = currentEdges;
+	nv1.loadConnectome(newConnectome);
+	updateMeshes()
+	// set button colour to gray if not connected and blue otherwise
+	let rhROI_btns = document.getElementById("rhROI_btns");
+	for (let btnIdx=0; btnIdx < rhROI_btns.childNodes.length; btnIdx++){
+		if (rhROI_btns.childNodes[btnIdx].innerHTML === nodes[node_idx].name){
+			rhROI_btns.childNodes[btnIdx].style.backgroundColor ="#00AA00"
+		} else if (ConnectedNodes.includes(rhROI_btns.childNodes[btnIdx].innerHTML)){
+			rhROI_btns.childNodes[btnIdx].style.backgroundColor = "#880088"
+		} else{rhROI_btns.childNodes[btnIdx].style.backgroundColor = ""}
+	}
+	let lhROI_btns = document.getElementById("lhROI_btns");
+	for (let btnIdx=0; btnIdx < lhROI_btns.childNodes.length; btnIdx++){
+		if (lhROI_btns.childNodes[btnIdx].innerHTML === nodes[node_idx].name){
+			lhROI_btns.childNodes[btnIdx].style.backgroundColor ="#00AA00"
+		} else if (ConnectedNodes.includes(lhROI_btns.childNodes[btnIdx].innerHTML)){
+			lhROI_btns.childNodes[btnIdx].style.backgroundColor = "#880088"
+		} else{lhROI_btns.childNodes[btnIdx].style.backgroundColor = ""}
+	}
+  }
   async function onButtonClick(event) {
-  if (event.target.id.charAt(0) === "|") {
-      //sliceType
-      if (event.target.id === "|Axial") nv1.setSliceType(nv1.sliceTypeAxial);
-      if (event.target.id === "|Coronal")
-        nv1.setSliceType(nv1.sliceTypeCoronal);
-      if (event.target.id === "|Sagittal")
-        nv1.setSliceType(nv1.sliceTypeSagittal);
-      if (event.target.id === "|Render") nv1.setSliceType(nv1.sliceTypeRender);
-      if (event.target.id === "|MultiPlanar") {
-        nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.NEVER;
-        nv1.setSliceType(nv1.sliceTypeMultiplanar);
-      }
-      if (event.target.id === "|MultiPlanarRender") {
-        nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
-        nv1.setSliceType(nv1.sliceTypeMultiplanar);
-      }
-      toggleGroup(event.target.id);
-  } //sliceType
-  if (event.target.id === "Colorbar") {
-      nv1.opts.isColorbar = !nv1.opts.isColorbar;
-      event.srcElement.classList.toggle("dropdown-item-checked");
-      nv1.drawScene();
-      return;
-    }
-  if (event.target.id === "Radiological") {
-      nv1.opts.isRadiologicalConvention = !nv1.opts.isRadiologicalConvention;
-      event.srcElement.classList.toggle("dropdown-item-checked");
-      nv1.drawScene();
-      return;
-    }
-  if (event.target.id === "ClipPlane") {
-      if (nv1.scene.clipPlaneDepthAziElev[0] > 1)
-        nv1.setClipPlane([0.3, 270, 0]);
-      else nv1.setClipPlane([2, 270, 0]);
-      nv1.drawScene();
-      return;
-    }
-  if (event.target.id.charAt(0) === "!") {
-      // set color scheme
-      //nv1.volumes[0].colormap = cmaps[i];
-	  if (event.target.id.startsWith("!Ed")){
-		nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", event.target.id.substr(3))
-	  } else {
-	    nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", event.target.id.substr(3))
-	  }
-      toggleGroup(event.target.id);
-      return;
-    }
-  if (event.target.id.charAt(0) === "_") {
-	  nv1.meshes = []; //close open meshes
-	  // "_SC""_SClog""_SCCC""_SClogCC""_SCNE""_SClogNE"
-	  if (event.target.id === "_SC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon"}
-	  else if (event.target.id === "_SClog"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber.jcon"}
-	  else if (event.target.id === "_SCCC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon"}
-	  else if (event.target.id === "_SClogCC"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC.jcon"}
-	  else if (event.target.id === "_SCNE"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon"}
-	  else if (event.target.id === "_SClogNE"){ var fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon"}
-      nv1.loadMeshes([
-        {url: fname}
-      ]);
-      toggleGroup(event.target.id);
-    }
+	  if (event.target.id.charAt(0) === "|") {
+		  //sliceType
+		  if (event.target.id === "|Axial") nv1.setSliceType(nv1.sliceTypeAxial);
+		  if (event.target.id === "|Coronal")
+			nv1.setSliceType(nv1.sliceTypeCoronal);
+		  if (event.target.id === "|Sagittal")
+			nv1.setSliceType(nv1.sliceTypeSagittal);
+		  if (event.target.id === "|Render") nv1.setSliceType(nv1.sliceTypeRender);
+		  if (event.target.id === "|MultiPlanar") {
+			nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.NEVER;
+			nv1.setSliceType(nv1.sliceTypeMultiplanar);
+		  }
+		  if (event.target.id === "|MultiPlanarRender") {
+			nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
+			nv1.setSliceType(nv1.sliceTypeMultiplanar);
+		  }
+		  toggleGroup(event.target.id);
+	  } //sliceType
+	  if (event.target.id === "Colorbar") {
+		  nv1.opts.isColorbar = !nv1.opts.isColorbar;
+		  event.srcElement.classList.toggle("dropdown-item-checked");
+		  nv1.drawScene();
+		  return;
+		}
+	  if (event.target.id === "Radiological") {
+		  nv1.opts.isRadiologicalConvention = !nv1.opts.isRadiologicalConvention;
+		  event.srcElement.classList.toggle("dropdown-item-checked");
+		  nv1.drawScene();
+		  return;
+		}
+	  if (event.target.id === "ClipPlane") {
+		  if (nv1.scene.clipPlaneDepthAziElev[0] > 1)
+			nv1.setClipPlane([0.3, 270, 0]);
+		  else nv1.setClipPlane([2, 270, 0]);
+		  nv1.drawScene();
+		  return;
+		}
+	  if (event.target.id.charAt(0) === "!") {
+		  // set color scheme
+		  //nv1.volumes[0].colormap = cmaps[i];
+		  if (event.target.id.startsWith("!Ed")){
+			EdColormap = event.target.id.substr(3);
+			nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", EdColormap)
+		  } else {
+			NdColormap = event.target.id.substr(3);
+			nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", NdColormap)
+		  }
+		  toggleGroup(event.target.id);
+		  return;
+		}
+	  if (event.target.id.charAt(0) === "_") {
+		  nv1.meshes = []; //close open meshes
+		  // "_SC""_SClog""_SCCC""_SClogCC""_SCNE""_SClogNE"
+		  if (event.target.id === "_SC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon"}
+		  else if (event.target.id === "_SClog"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber.jcon"}
+		  else if (event.target.id === "_SCCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon"}
+		  else if (event.target.id === "_SClogCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC.jcon"}
+		  else if (event.target.id === "_SCNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon"}
+		  else if (event.target.id === "_SClogNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon"}
+		  await nv1.loadConnectomeFromUrl(fname);
+		  nv1.origConnectome = nv1.meshes[0].connectome;
+		  updateMeshes()
+		  toggleGroup(event.target.id);
+		}
   }
   // Update the current slider value (each time you drag the slider handle)
   edgeSlider.oninput = function () {
@@ -189,13 +268,15 @@
   let opts = {
     show3Dcrosshair: true,
     isColorbar: true,
+	isResizeCanvas: false,
     backColor: [0, 0, 0, 1],
-    //sliceType: niivue.SLICE_TYPE.RENDER,
-	//multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
+	dragAndDropEnabled: false,
+    sliceType: niivue.SLICE_TYPE.RENDER,
+	multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
 	multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
 	isOrientCube: true,
 	showLegend: false,
-	meshXRay: .3,
+	meshXRay: .2,
   }
   reset.onclick = function () {
     nv1.setDefaults(opts, true)
@@ -206,9 +287,13 @@
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");
   await nv1.loadVolumes(volumeList1);
-  await nv1.loadConnectomeFromUrl("https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon");
+  await nv1.loadConnectomeFromUrl(fname);
   //   indexNearestXYZmm(Xmm: number, Ymm: number, Zmm: number): number[]  could be of interest
   // nv1.getAllLabels()
+  var EdColormap = "Plasma";
+  var NdColormap = "Plasma";
+  nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", EdColormap)
+  nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", NdColormap)
   nv1.setClipPlane([-0.0, 0, 40]);
   nv1.volumes[0].colorbarVisible = false
   //nv1.setMeshProperty(nv1.meshes[0].id, "legendLineThickness", 2)
@@ -219,13 +304,14 @@
   nv1.setClipPlaneThick(1.73)
   nv1.updateGLVolume()
   let nodes = nv1.meshes[0].nodes;
+  nv1.origConnectome = JSON.parse(JSON.stringify(nv1.meshes[0].connectome)); // deep copy
   let rhROI_btns = document.getElementById("rhROI_btns");
   let lhROI_btns = document.getElementById("lhROI_btns");
   for (let i = 0; i < nodes.length; i++) {
 	let btn = document.createElement("button");
 		btn.innerHTML = nodes[i].name;
 		btn.onclick = function () {
-		
+			// position crosshair at the center of the ROI
 			let dPos = [nodes[i].x, nodes[i].y, nodes[i].z];
 			dPos = nv1.volumes[0].mm2vox(dPos);
 			const xhPos = nv1.frac2vox(nv1.scene.crosshairPos).slice(0, 3)
@@ -234,15 +320,29 @@
 			  dPos[j] = dPos[j] - xhPos[j];
 			}
 			nv1.moveCrosshairInVox(dPos[0], dPos[1], dPos[2])
+			// if node subnetwork selected, then only display the connection sto this node
+			if (document.getElementById('showSubNd').checked){
+				showSubNetwork(i)
+			}
 		};
 	if (nodes[i].name.startsWith("R ")){
 		rhROI_btns.appendChild(btn)
 	} else{
 		lhROI_btns.appendChild(btn)
 	}
-	
   }
+  let rNodebtn = document.getElementById('showNd');
+  rNodebtn.onclick = function (){
+	for (let btnIdx=0; btnIdx < rhROI_btns.childNodes.length; btnIdx++){
+		rhROI_btns.childNodes[btnIdx].style.backgroundColor = "";
+	}
+	for (let btnIdx=0; btnIdx < lhROI_btns.childNodes.length; btnIdx++){
+		lhROI_btns.childNodes[btnIdx].style.backgroundColor = "";
+	}
+  }
+  //lhROI_btns.childNodes[btnIdx].style.backgroundColor = ""
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++)
-    buttons[i].addEventListener("click", onButtonClick, false);
+    {buttons[i].addEventListener("click", onButtonClick, false);}
+  //nv1.updateGLVolume()
 </script>

@@ -18,6 +18,28 @@ body {
 header {
   margin: 10px;
 }
+/* Create two unequal columns that floats next to each other */
+.column {
+  float: left;
+  padding: 0px;
+  height: 100%; /* Should be removed. Only for demonstration */
+}
+.left {
+  width: 30%;
+}
+.right {
+  width:  60%;
+  height: 100%
+}
+.column {
+  float: left;
+  height: 100%
+}
+.row {
+  content: "";
+  clear: both;
+  display: table;
+}
 main {
   flex: 1;
   background: #000000;
@@ -30,6 +52,7 @@ canvas {
   position: absolute;
   cursor: crosshair;
 }
+
 canvas:focus {
   outline: 0px;
 }
