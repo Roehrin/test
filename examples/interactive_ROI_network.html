@@ -294,8 +294,9 @@
   var NdColormap = "Plasma";
   nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", EdColormap)
   nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", NdColormap)
+  nv1.meshes[0].edgeColormapNegative = '';
   nv1.setClipPlane([-0.0, 0, 40]);
-  nv1.volumes[0].colorbarVisible = false
+  nv1.volumes[0].colorbarVisible = false;
   //nv1.setMeshProperty(nv1.meshes[0].id, "legendLineThickness", 2)
   //let AllLbl = nv1.getAllLabels();
   //for (var i = 0; i < AllLbl.length; i++){
