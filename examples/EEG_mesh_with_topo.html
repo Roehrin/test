@@ -20,14 +20,25 @@
 	<p>EEG electrodes are represented as yellow spheres, the voltage map is colour coded (red: positive values, blue: negative values).<br>
 	'Brain' source slider enables you to change the source location (if clicked, key arrows wors as well),
 	'Gamma' slider enables you to change the contrast, radio button X, Y and Z permits to change the orientation of the dipole source.</p>
-		<label for="meshSlider">Brain source</label>
+		<label for="meshXRay">XRay</label>
+		<input type="range" min="0" max="10" value="3" class="slider" id="meshXRay" />
+		<label for="meshMinSlider">Min threshold</label>
 		<input
 			type="range"
 			min="0"
-			max="1156"
+			max="300"
 			value="0"
 			class="slider"
-			id="meshSlider"
+			id="meshMinSlider"
+		/>
+		<label for="meshMaxSlider">Max threshold</label>
+		<input
+			type="range"
+			min="0"
+			max="300"
+			value="300"
+			class="slider"
+			id="meshMaxSlider"
 		/>
 		<label for="gammaSlider">Gamma</label>
 		<input
@@ -44,7 +55,17 @@
 		<input type="radio" id="oriY" name="sourceOri" value="showNodeSubNet">
 		<label for="oriYbtn">Y</label>
 		<input type="radio" id="oriZ" name="sourceOri" value="showNode">
-		<label for="oriZbtn">Z</label>
+		<label for="oriZbtn">Z</label></br>
+		<label for="srcSlider">Brain source</label>
+		<input
+			type="range"
+			min="0"
+			max="1156"
+			value="0"
+			class="slider"
+			style="width:80%"
+			id="srcSlider"
+		/>
     </header>
     <main id="container">
       <canvas id="gl1"></canvas>
@@ -54,7 +75,9 @@
 <script type="module">
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
   
-  var slider = document.getElementById("meshSlider");
+  var srcSlider = document.getElementById("srcSlider");
+  var minSlider = document.getElementById("meshMinSlider");
+  var maxSlider = document.getElementById("meshMaxSlider");
   var Xbtn = document.getElementById('oriX')
   var Ybtn = document.getElementById('oriY')
   var Zbtn = document.getElementById('oriZ')
@@ -67,6 +90,10 @@
     nv1.createOnLocationChange()
     nv1.drawScene()
   }
+  meshXRay.oninput = function () {
+        nv1.opts.meshXRay = this.value * 0.1
+        nv1.drawScene()
+  }
   Xbtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
         name: "target",
@@ -77,7 +104,7 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(slider.valueAsNumber-1)+0);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+0);
   };
   Ybtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -89,7 +116,7 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(slider.valueAsNumber-1)+1);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+1);
   };
   Zbtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -101,9 +128,15 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(slider.valueAsNumber-1)+2);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+2);
   };
-  slider.oninput = function () {
+  minSlider.oninput = function () {
+    nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "cal_min", this.value * 0.1);
+  };
+  maxSlider.oninput = function () {
+    nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "cal_max", this.value * 0.1);
+  };
+  srcSlider.oninput = function () {
 	let ori_idx = 0;
 	if (Ybtn.checked){
 		ori_idx = 1;
@@ -134,12 +167,8 @@
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(this.value)+ori_idx);
   };
-  var slider2 = document.getElementById("meshSlider2");
-  //slider2.oninput = function () {
-  //  nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "opacity", this.value * 0.1);
-  //};
-  var slider = document.getElementById("gammaSlider");
-  slider.oninput = function () {
+  var gamSlider = document.getElementById("gammaSlider");
+  gamSlider.oninput = function () {
 	
     nv1.setGamma(this.value * 0.01);
 	nv1.setMeshProperty(0, "edgeMin", 0) // little trick to update the mesh otherwise only the volume is updated
@@ -158,8 +187,8 @@
   var meshLayersList1 = [
     {
       url: "https://roehrin.github.io/test/src/leadfield.gii",
-	  colormap: "red",
-	  colormapNegative: "blue",
+	  colormap: "hot",
+	  colormapNegative: "electric_blue",
 	  cal_min: 0,
       cal_max: 30,
       useNegativeCmap: true,
