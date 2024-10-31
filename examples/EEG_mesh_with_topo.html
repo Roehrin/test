@@ -104,7 +104,7 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+0);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+0);
   };
   Ybtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -116,7 +116,7 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+1);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+1);
   };
   Zbtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -128,7 +128,7 @@
         sizeValue: 2.5
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
-	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(srcSlider.valueAsNumber-1)+2);
+	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+2);
   };
   minSlider.oninput = function () {
     nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "cal_min", this.value * 0.1);
@@ -236,11 +236,13 @@
   await nv1.loadMeshes([
     {
       url: "https://roehrin.github.io/test/src/leadfield.gii",
+	  //url: "https://roehrin.github.io/test/src/leadfield2D.gii",
 	  layers: meshLayersList1,
     },
 	{
       url: "https://roehrin.github.io/test/src/EGI257_electrodes.jcon",
-    }
+	  //url: "https://roehrin.github.io/test/src/EGI257_2Dlayout.jcon",
+    },
   ]);
   //await nv1.loadConnectome(dipole)
   nv1.addMesh(nv1.loadConnectomeAsMesh(dipole))
