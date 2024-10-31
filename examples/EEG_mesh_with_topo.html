@@ -55,7 +55,9 @@
 		<input type="radio" id="oriY" name="sourceOri" value="showNodeSubNet">
 		<label for="oriYbtn">Y</label>
 		<input type="radio" id="oriZ" name="sourceOri" value="showNode">
-		<label for="oriZbtn">Z</label></br>
+		<label for="oriZbtn">Z</label>
+		<label for="normLeadfield">Normalised Leadfield</label>
+		<input type="checkbox" id="normLeadfield" checked /></br>
 		<label for="srcSlider">Brain source</label>
 		<input
 			type="range"
@@ -63,7 +65,7 @@
 			max="1156"
 			value="0"
 			class="slider"
-			style="width:80%"
+			style="width:50%"
 			id="srcSlider"
 		/>
     </header>
@@ -167,6 +169,38 @@
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(this.value)+ori_idx);
   };
+  normLeadfield.onclick = async function() {
+	nv1.meshes[0].layers = []; // remove current layer
+	if (normLeadfield.checked){
+		meshLayersList1 = [
+		{
+			url: "https://roehrin.github.io/test/src/norm_leadfield.gii",
+			colormap: "hot",
+			colormapNegative: "electric_blue",
+			cal_min: 0,
+			cal_max: 100,
+			useNegativeCmap: true,
+			opacity: 1,
+		},
+		];
+	} else {
+		meshLayersList1 = [
+		{
+			url: "https://roehrin.github.io/test/src/leadfield.gii",
+			colormap: "hot",
+			colormapNegative: "electric_blue",
+			cal_min: 0,
+			cal_max: 100,
+			useNegativeCmap: true,
+			opacity: 1,
+		},
+		];
+	}
+	await niivue.NVMesh.loadLayer(meshLayersList1[0], nv1.meshes[0])
+	nv1.meshes[0].updateMesh(nv1.gl)
+	srcSlider.oninput()
+	nv1.drawScene()
+	}
   var gamSlider = document.getElementById("gammaSlider");
   gamSlider.oninput = function () {
 	
