@@ -6,7 +6,52 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>4D Meshes - EEG topography</title>
-    <link rel="stylesheet" href="../niivue.css" />
+	<style>
+	  html {
+		height: auto;
+		min-height: 100%;
+		margin: 0;
+	  }
+	  body {
+		display: flex;
+		flex-direction: column;
+		margin: 0;
+		min-height: 100%;
+		width: 100%;
+		position: absolute;
+		font-family: system-ui, Arial, Helvetica, sans-serif;
+		user-select: none; /* Standard syntax */
+		color: white;
+		background: #202020;
+	  }
+	  header {
+		margin: 10px;
+	  }
+	  footer {
+		margin: 5px;
+	  }
+	  .page-wrapper {
+		margin: 2px;
+	  }
+	  .row {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		width: 100%;
+		min-height: 100%;
+		margin: 2px;
+	  }
+	  .column {
+		display: flex;
+		flex-direction: column;
+		flex-basis: 100%;
+		flex: 1;
+		background: #404040;
+	  }
+	  canvas:focus {
+		outline: red 1px solid;
+	  }
+	</style>
   </head>
   <body>
     <noscript>
@@ -57,7 +102,9 @@
 		<input type="radio" id="oriZ" name="sourceOri" value="showNode">
 		<label for="oriZbtn">Z</label>
 		<label for="normLeadfield">Normalised Leadfield</label>
-		<input type="checkbox" id="normLeadfield" checked /></br>
+		
+		<input type="checkbox" id="normLeadfield" checked />
+		<p>
 		<label for="srcSlider">Brain source</label>
 		<input
 			type="range"
@@ -70,11 +117,20 @@
 		/>
     </header>
     <main id="container">
-      <canvas id="gl1"></canvas>
+	<div class='page-wrapper'>
+        <div class='row' >
+          <div class='column'>
+              <canvas id="gl1">
+          </div>
+          <div class='column'>
+              <canvas id="gl2">
+          </div>
+        </div>
+    </div>
     </main>
   </body>
 </html>
-<script type="module">
+<script type="module" async>
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
   
   var srcSlider = document.getElementById("srcSlider");
@@ -107,6 +163,7 @@
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+0);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+0);
   };
   Ybtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -119,6 +176,7 @@
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+1);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+1);
   };
   Zbtn.onclick = function () {
 	nv1.meshes[2].nodes[1] = {
@@ -131,12 +189,15 @@
       };
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+2);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", 3*srcSlider.valueAsNumber+2);
   };
   minSlider.oninput = function () {
     nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "cal_min", this.value * 0.1);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "cal_min", this.value * 0.1);
   };
   maxSlider.oninput = function () {
     nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "cal_max", this.value * 0.1);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "cal_max", this.value * 0.1);
   };
   srcSlider.oninput = function () {
 	let ori_idx = 0;
@@ -168,9 +229,11 @@
     ];
 	nv1.meshes[2].updateMesh(nv1.gl)
 	nv1.setMeshLayerProperty(nv1.meshes[0].id, 0, "frame4D", 3*(this.value)+ori_idx);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", 3*(this.value)+ori_idx);
   };
   normLeadfield.onclick = async function() {
 	nv1.meshes[0].layers = []; // remove current layer
+	nv2.meshes[0].layers = []; // remove current layer
 	if (normLeadfield.checked){
 		meshLayersList1 = [
 		{
@@ -198,19 +261,23 @@
 	}
 	await niivue.NVMesh.loadLayer(meshLayersList1[0], nv1.meshes[0])
 	nv1.meshes[0].updateMesh(nv1.gl)
+	await niivue.NVMesh.loadLayer(meshLayersList1[0], nv2.meshes[0])
+	nv2.meshes[0].updateMesh(nv2.gl)
 	srcSlider.oninput()
 	nv1.drawScene()
+	nv2.drawScene()
 	}
   var gamSlider = document.getElementById("gammaSlider");
   gamSlider.oninput = function () {
 	
     nv1.setGamma(this.value * 0.01);
+	nv2.setGamma(this.value * 0.01);
 	nv1.setMeshProperty(0, "edgeMin", 0) // little trick to update the mesh otherwise only the volume is updated
-	//nv1.updateGLVolume()
+	nv2.setMeshProperty(0, "edgeMin", 0)
   };
   var nv1 = new niivue.Niivue({
     show3Dcrosshair: true,
-	isColorbar: true,
+	isColorbar: false,
 	showLegend: false,
     backColor: [0.9, 0.9, 1, 1],
 	meshXRay: .5,
@@ -270,20 +337,40 @@
   await nv1.loadMeshes([
     {
       url: "https://roehrin.github.io/test/src/leadfield.gii",
-	  //url: "https://roehrin.github.io/test/src/leadfield2D.gii",
 	  layers: meshLayersList1,
     },
 	{
       url: "https://roehrin.github.io/test/src/EGI257_electrodes.jcon",
-	  //url: "https://roehrin.github.io/test/src/EGI257_2Dlayout.jcon",
     },
   ]);
+  
   //await nv1.loadConnectome(dipole)
   nv1.addMesh(nv1.loadConnectomeAsMesh(dipole))
   nv1.drawScene()
-  nv1.meshes[1].colorbarVisible = false;
-  nv1.meshes[2].colorbarVisible = false;
   nv1.setMeshShader(nv1.meshes[0].id, "Diffuse");
-  nv1.updateGLVolume()
   updateCrosshairPos()
+  nv1.setRenderAzimuthElevation(0, 90);
+  var nv2 = new niivue.Niivue({
+    show3Dcrosshair: false,
+	isColorbar: true,
+	showLegend: false,
+    backColor: [0.9, 0.9, 1, 1],
+	meshXRay: 0,
+	isOrientCube: false,
+  });
+  nv2.attachTo("gl2");
+  await nv2.loadMeshes([
+    {
+	  url: "https://roehrin.github.io/test/src/leadfield2D.gii",
+	  layers: meshLayersList1,
+    },
+	{
+	  url: "https://roehrin.github.io/test/src/EGI257_2Dlayout.jcon",
+    }
+  ]);
+  nv2.setMeshShader(nv2.meshes[0].id, "Diffuse");
+  nv2.setMeshProperty(nv2.meshes[1].id, "nodeScale", 1)
+  nv2.meshes[1].colorbarVisible = false;
+  nv2.setRenderAzimuthElevation(0, 90);
+  nv2.updateGLVolume()
 </script>
