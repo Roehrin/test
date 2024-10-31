@@ -26,7 +26,7 @@
 		<input
 			type="range"
 			min="0"
-			max="300"
+			max="1000"
 			value="0"
 			class="slider"
 			id="meshMinSlider"
@@ -35,8 +35,8 @@
 		<input
 			type="range"
 			min="0"
-			max="300"
-			value="300"
+			max="1000"
+			value="1000"
 			class="slider"
 			id="meshMaxSlider"
 		/>
@@ -186,11 +186,11 @@
   nv1.attachTo("gl1");
   var meshLayersList1 = [
     {
-      url: "https://roehrin.github.io/test/src/leadfield.gii",
+      url: "https://roehrin.github.io/test/src/norm_leadfield.gii",
 	  colormap: "hot",
 	  colormapNegative: "electric_blue",
 	  cal_min: 0,
-      cal_max: 30,
+      cal_max: 100,
       useNegativeCmap: true,
       opacity: 1,
     },
