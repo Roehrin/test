@@ -57,10 +57,10 @@
 		<input type="radio" id="oriZ" name="sourceOri" value="showNode">
 		<label for="oriZbtn">Z</label>
 		<label for="normLeadfield">Normalised Leadfield</label>
-		
 		<input type="checkbox" id="normLeadfield" checked />
 		<p>
 		<label for="srcSlider">Brain source</label>
+		<button id="prevSource">back</button>
 		<input
 			type="range"
 			min="0"
@@ -70,6 +70,7 @@
 			style="width:50%"
 			id="srcSlider"
 		/>
+		<button id="nextSource">forward</button>
     </header>
     <main id="container">
 	<div class='page-wrapper'>
@@ -327,5 +328,13 @@
   nv2.setMeshProperty(nv2.meshes[1].id, "nodeScale", 1)
   nv2.meshes[1].colorbarVisible = false;
   nv2.setRenderAzimuthElevation(0, 90);
-  nv2.updateGLVolume()
+  prevSource.onclick = function () {
+		srcSlider.value = String(srcSlider.valueAsNumber-1);
+		srcSlider.oninput();
+	}
+	nextSource.onclick = function () {
+		srcSlider.value = String(srcSlider.valueAsNumber+1);
+		srcSlider.oninput();
+	}
+	nv2.updateGLVolume()
 </script>

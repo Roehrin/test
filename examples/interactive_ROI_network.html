@@ -21,8 +21,8 @@
 		  <a class="viewBtn" id="|Sagittal">Sagittal</a>
 		  <a class="viewBtn" id="|Coronal">Coronal</a>
 		  <a class="viewBtn" id="|Render">Render</a>
-		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanar">A+C+S</a>
-		  <a class="viewBtn" id="|MultiPlanarRender">A+C+S+R</a		  >
+		  <a class="viewBtn" id="|MultiPlanar">A+C+S</a>
+		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a		  >
 		  <a class="viewBtn divider dropdown-item-checked" id="Colorbar">Colorbar</a>
 		  <a class="viewBtn" id="Radiological">Radiological</a>
 		  <a class="viewBtn" id="ClipPlane">Render Clip Plane</a>
@@ -167,6 +167,7 @@
 	// deep copy of the original connectome to modify its edges
 	let newConnectome = JSON.parse(JSON.stringify(nv1.origConnectome));
 	newConnectome.edges = currentEdges;
+	newConnectome.edgeColormapNegative = "";
 	nv1.loadConnectome(newConnectome);
 	updateMeshes()
 	// set button colour to gray if not connected and blue otherwise
@@ -248,6 +249,7 @@
 		  else if (event.target.id === "_SCNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon"}
 		  else if (event.target.id === "_SClogNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon"}
 		  await nv1.loadConnectomeFromUrl(fname);
+		  nv1.meshes[0].edgeColormapNegative = '';
 		  nv1.origConnectome = nv1.meshes[0].connectome;
 		  updateMeshes()
 		  rNodebtn.onclick()
@@ -274,11 +276,12 @@
 	//isResizeCanvas: false,
     backColor: [0, 0, 0, 1],
 	dragAndDropEnabled: false,
-    sliceType: niivue.SLICE_TYPE.RENDER,
+    //sliceType: niivue.SLICE_TYPE.RENDER,
 	//multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
-	//multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
+	multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
 	isOrientCube: true,
 	showLegend: false,
+	meshXRay: .3,
   }
   reset.onclick = function () {
     nv1.setDefaults(opts, true)
