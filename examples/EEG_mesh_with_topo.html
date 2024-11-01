@@ -6,52 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>4D Meshes - EEG topography</title>
-	<style>
-	  html {
-		height: auto;
-		min-height: 100%;
-		margin: 0;
-	  }
-	  body {
-		display: flex;
-		flex-direction: column;
-		margin: 0;
-		min-height: 100%;
-		width: 100%;
-		position: absolute;
-		font-family: system-ui, Arial, Helvetica, sans-serif;
-		user-select: none; /* Standard syntax */
-		color: white;
-		background: #202020;
-	  }
-	  header {
-		margin: 10px;
-	  }
-	  footer {
-		margin: 5px;
-	  }
-	  .page-wrapper {
-		margin: 2px;
-	  }
-	  .row {
-		display: flex;
-		flex-direction: row;
-		flex-wrap: wrap;
-		width: 100%;
-		min-height: 100%;
-		margin: 2px;
-	  }
-	  .column {
-		display: flex;
-		flex-direction: column;
-		flex-basis: 100%;
-		flex: 1;
-		background: #404040;
-	  }
-	  canvas:focus {
-		outline: red 1px solid;
-	  }
-	</style>
+	<link rel="stylesheet" href="../niivue_dualview.css" />
   </head>
   <body>
     <noscript>
@@ -118,7 +73,7 @@
     </header>
     <main id="container">
 	<div class='page-wrapper'>
-        <div class='row' >
+        <div class='row'>
           <div class='column'>
               <canvas id="gl1">
           </div>

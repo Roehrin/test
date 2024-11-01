@@ -1,62 +1,46 @@
 html {
-  height: auto;
-  min-height: 100%;
-  margin: 0;
+	height: auto;
+	min-height: 100%;
+	margin: 0;
 }
 body {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  min-height: 100%;
-  width: 100%;
-  position: absolute;
-  font-family: system-ui, Arial, Helvetica, sans-serif;
-  user-select: none; /* Standard syntax */
-  color: white;
-  background: #404040;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	min-height: 100%;
+	width: 100%;
+	position: absolute;
+	font-family: system-ui, Arial, Helvetica, sans-serif;
+	user-select: none; /* Standard syntax */
+	color: white;
+	background: #202020;
 }
 header {
-  margin: 10px;
-}
-/* Create two unequal columns that floats next to each other */
-.column {
-  float: left;
-  padding: 0px;
-  height: 100%; /* Should be removed. Only for demonstration */
-}
-.left {
-  width: 30%;
-}
-.right {
-  width:  60%;
-  height: 100%
-}
-.column {
-  float: left;
-  height: 100%
-}
-.row {
-  content: "";
-  clear: both;
-  display: table;
-}
-main {
-  flex: 1;
-  background: #000000;
-  position: relative;
+	margin: 10px;
 }
 footer {
-  margin: 10px;
+	margin: 5px;
 }
-canvas {
-  position: absolute;
-  cursor: crosshair;
+.page-wrapper {
+	margin: 2px;
+}
+.row {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 100%;
+	min-height: 100%;
+	margin: 2px;
+}
+.column {
+	display: flex;
+	flex-direction: column;
+	flex-basis: 100%;
+	flex: 1;
+	background: #404040;
 }
 canvas:focus {
-  outline: 0px;
-}
-div {
-  display: table-row;
+	outline: red 1px solid;
 }
 .dropdown {
   float: left;
@@ -68,7 +52,7 @@ div {
   outline: none;
   color: white;
   padding: 12px 12px;
-  background-color: #404040;
+  background-color: #202020;
   font-family: inherit;
   margin: 0;
 }

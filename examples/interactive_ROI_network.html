@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Interactive ROI Network</title>
-    <link rel="stylesheet" href="../niivue.css" />
+    <link rel="stylesheet" href="../niivue_dualview.css" />
   </head>
   <body>
     <noscript>niivue requires JavaScript.</noscript>
@@ -54,7 +54,7 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
-          Script
+          Network file
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
@@ -65,11 +65,12 @@
 		  <a class="viewBtn" id="_SCNE">fiber count and nodal eff</a> 
           <a class="viewBtn" id="_SClogNE">log fiber count and nodal eff</a> 
         </div>
-      </div>
+    </div>
   </header>
     <main id="container">
+	<div class='page-wrapper'>
 		<div class="row">
-			<div class="column left">
+				<div style="width: 400px; background: #404040;">
 				Select regions of interest: <br>
 				(show: <input type="radio" id="showNd" name="subNetwrk" value="showNode" checked>
 			 	<label for="rbShow">node</label>
@@ -80,11 +81,12 @@
 				<p>
 				Left hemisphere:<br>
 				<label id="lhROI_btns"></label>
-			</div>
-			<div class="column left">
-				<canvas id="gl1" width="900" height="700" style="width: 900px; height: 100%;"></canvas>
+				</div>
+			<div class="column">
+				<canvas id="gl1"></canvas>
 			</div>
 		</div>
+	</div>
     </main>
   <footer>
 	<label for="edgeSlider">Edge Size</label>
@@ -248,6 +250,7 @@
 		  await nv1.loadConnectomeFromUrl(fname);
 		  nv1.origConnectome = nv1.meshes[0].connectome;
 		  updateMeshes()
+		  rNodebtn.onclick()
 		  toggleGroup(event.target.id);
 		}
   }
@@ -268,15 +271,14 @@
   let opts = {
     show3Dcrosshair: true,
     isColorbar: true,
-	isResizeCanvas: false,
+	//isResizeCanvas: false,
     backColor: [0, 0, 0, 1],
 	dragAndDropEnabled: false,
     sliceType: niivue.SLICE_TYPE.RENDER,
-	multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
-	multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
+	//multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
+	//multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
 	isOrientCube: true,
 	showLegend: false,
-	meshXRay: .2,
   }
   reset.onclick = function () {
     nv1.setDefaults(opts, true)
@@ -332,7 +334,7 @@
 		lhROI_btns.appendChild(btn)
 	}
   }
-  let rNodebtn = document.getElementById('showNd');
+  var rNodebtn = document.getElementById('showNd');
   rNodebtn.onclick = function (){
 	for (let btnIdx=0; btnIdx < rhROI_btns.childNodes.length; btnIdx++){
 		rhROI_btns.childNodes[btnIdx].style.backgroundColor = "";
@@ -343,7 +345,8 @@
   }
   //lhROI_btns.childNodes[btnIdx].style.backgroundColor = ""
   var buttons = document.getElementsByClassName("viewBtn");
-  for (let i = 0; i < buttons.length; i++)
-    {buttons[i].addEventListener("click", onButtonClick, false);}
+  for (let i = 0; i < buttons.length; i++){
+	buttons[i].addEventListener("click", onButtonClick, false);
+  }
   //nv1.updateGLVolume()
 </script>
