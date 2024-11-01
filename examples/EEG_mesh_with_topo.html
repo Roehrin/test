@@ -20,45 +20,58 @@
 	<p>EEG electrodes are represented as yellow spheres, the voltage map is colour coded (red: positive values, blue: negative values).<br>
 	'Brain' source slider enables you to change the source location (if clicked, key arrows wors as well),
 	'Gamma' slider enables you to change the contrast, radio button X, Y and Z permits to change the orientation of the dipole source.</p>
-		<label for="meshXRay">XRay</label>
-		<input type="range" min="0" max="10" value="3" class="slider" id="meshXRay" />
-		<label for="meshMinSlider">Min threshold</label>
-		<input
-			type="range"
-			min="0"
-			max="1000"
-			value="0"
-			class="slider"
-			id="meshMinSlider"
-		/>
-		<label for="meshMaxSlider">Max threshold</label>
-		<input
-			type="range"
-			min="0"
-			max="1000"
-			value="1000"
-			class="slider"
-			id="meshMaxSlider"
-		/>
-		<label for="gammaSlider">Gamma</label>
-		<input
-			type="range"
-			min="10"
-			max="400"
-			value="100"
-			class="slider"
-			id="gammaSlider"
-		/>
-		Source orientation:
-		<input type="radio" id="oriX" name="sourceOri" value="showNode" checked>
-		<label for="oriXbtn">X</label>
-		<input type="radio" id="oriY" name="sourceOri" value="showNodeSubNet">
-		<label for="oriYbtn">Y</label>
-		<input type="radio" id="oriZ" name="sourceOri" value="showNode">
-		<label for="oriZbtn">Z</label>
-		<label for="normLeadfield">Normalised Leadfield</label>
-		<input type="checkbox" id="normLeadfield" checked />
-		<p>
+		<div class='row'>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="meshXRay">XRay</label>
+			<input type="range" min="0" max="10" value="3" class="slider" id="meshXRay" />
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="meshMinSlider">Min threshold</label>
+			<input
+				type="range"
+				min="0"
+				max="1000"
+				value="0"
+				class="slider"
+				id="meshMinSlider"
+			/>
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="meshMaxSlider">Max threshold</label>
+			<input
+				type="range"
+				min="0"
+				max="1000"
+				value="1000"
+				class="slider"
+				id="meshMaxSlider"
+			/>
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="gammaSlider">Gamma</label>
+			<input
+				type="range"
+				min="10"
+				max="400"
+				value="100"
+				class="slider"
+				id="gammaSlider"
+			/>
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			Source orientation:
+			<label for="oriXbtn">X</label>
+			<input type="radio" id="oriX" name="sourceOri" value="showNode" checked>
+			<label for="oriYbtn">Y</label>
+			<input type="radio" id="oriY" name="sourceOri" value="showNodeSubNet">
+			<label for="oriZbtn">Z</label>
+			<input type="radio" id="oriZ" name="sourceOri" value="showNode">
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="normLeadfield">Normalised Leadfield</label>
+			<input type="checkbox" id="normLeadfield" checked />
+			</div>
+		</div>
 		<label for="srcSlider">Brain source</label>
 		<button id="prevSource">back</button>
 		<input
@@ -71,7 +84,7 @@
 			id="srcSlider"
 		/>
 		<button id="nextSource">forward</button>
-    </header>
+</header>
     <main id="container">
 	<div class='page-wrapper'>
         <div class='row'>

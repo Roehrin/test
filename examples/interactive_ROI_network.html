@@ -22,7 +22,7 @@
 		  <a class="viewBtn" id="|Coronal">Coronal</a>
 		  <a class="viewBtn" id="|Render">Render</a>
 		  <a class="viewBtn" id="|MultiPlanar">A+C+S</a>
-		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a		  >
+		  <a class="viewBtn dropdown-item-checked" id="|MultiPlanarRender">A+C+S+R</a>
 		  <a class="viewBtn divider dropdown-item-checked" id="Colorbar">Colorbar</a>
 		  <a class="viewBtn" id="Radiological">Radiological</a>
 		  <a class="viewBtn" id="ClipPlane">Render Clip Plane</a>
@@ -242,13 +242,16 @@
 	  if (event.target.id.charAt(0) === "_") {
 		  nv1.meshes = []; //close open meshes
 		  // "_SC""_SClog""_SCCC""_SClogCC""_SCNE""_SClogNE"
-		  if (event.target.id === "_SC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon"}
-		  else if (event.target.id === "_SClog"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber.jcon"}
-		  else if (event.target.id === "_SCCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon"}
-		  else if (event.target.id === "_SClogCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC.jcon"}
-		  else if (event.target.id === "_SCNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon"}
-		  else if (event.target.id === "_SClogNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon"}
+		  let lbl1 = "fiber count";
+		  let lbl2 = "strength";
+		  if (event.target.id === "_SC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon";}
+		  else if (event.target.id === "_SClog"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber.jcon"; lbl1 = "log(fiber count)";}
+		  else if (event.target.id === "_SCCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon" ; lbl2 = "clustering coeff.";}
+		  else if (event.target.id === "_SClogCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC.jcon" ; lbl1 = "log(fiber count)"; lbl2 = "clustering coeff.";}
+		  else if (event.target.id === "_SCNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon" ; lbl2 = "nodal efficiency";}
+		  else if (event.target.id === "_SClogNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon" ; lbl1 = "log(fiber count)"; lbl2 = "nodal efficiency";}
 		  await nv1.loadConnectomeFromUrl(fname);
+		  nv1.document.labels[0].text = "edge: " + lbl1 + ",\n node: " + lbl2;
 		  nv1.meshes[0].edgeColormapNegative = '';
 		  nv1.origConnectome = nv1.meshes[0].connectome;
 		  updateMeshes()
@@ -308,6 +311,9 @@
 //	AllLbl[i].style.textScale = .5;
   //}
   nv1.setClipPlaneThick(1.73)
+  nv1.addLabel("edge: fiber count,\n node: strength", 
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
+		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
   nv1.updateGLVolume()
   let nodes = nv1.meshes[0].nodes;
   nv1.origConnectome = JSON.parse(JSON.stringify(nv1.meshes[0].connectome)); // deep copy

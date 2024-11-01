@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Investigate Point spread functions of eLORETA</title>
+    <title>Investigate Point spread functions of several inverse solution methods</title>
     <link rel="stylesheet" href="../niivue.css" />
   </head>
   <body>
     <noscript>niivue requires JavaScript.</noscript>
     <header>
-	<h3>Investigate Point spread functions of eLORETA</h3>
+	<h3>Investigate Point spread functions of several inverse solution methods</h3>
 	<div class="row">
 		<div class="dropdown">
 			<button class="dropbtn" data-toggle="dropdown">
@@ -48,7 +48,10 @@
 			  <i class="fa fa-caret-down"></i>
 			</button>
 			<div class="dropdown-content">
-			  <a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a> 
+				<a class="viewBtn" id="_MNE">MNE</a>
+				<a class="viewBtn" id="_wMNE">wMNE</a>
+				<a class="viewBtn" id="_sLORETA">sLORETA</a>
+				<a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a>
 			</div>
 		</div>
 	</div>
@@ -57,19 +60,10 @@
 		<input
 			type="range"
 			min="0"
-			max="1000"
+			max="999"
 			value="0"
 			class="slider"
 			id="meshMinSlider"
-		/>
-		<label for="meshMaxSlider">Max threshold</label>
-		<input
-			type="range"
-			min="0"
-			max="1000"
-			value="1000"
-			class="slider"
-			id="meshMaxSlider"
 		/>
 		<label for="gammaSlider">Gamma</label>
 		<input
@@ -117,12 +111,11 @@
 	import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
 	var srcSlider = document.getElementById("srcSlider");
 	var minSlider = document.getElementById("meshMinSlider");
-	var maxSlider = document.getElementById("meshMaxSlider");
 	var gamSlider = document.getElementById("gammaSlider");
 	var volumeList1 = [
 	// first item is background image
 	{
-		url: "https://roehrin.github.io/test/src/sub-template_desc-brain_T1w.nii.gz",
+		url: "https://niivue.github.io/niivue/images/mni152.nii.gz",
 		colormap: "gray",
 		opacity: 1,
 		visible: true,
@@ -164,15 +157,12 @@
 		  }
 		];
 		nv1.meshes[0].updateMesh(nv1.gl)
-		nv1.setFrame4D(nv1.volumes[1].id, this.value)
+		currentVol = this.value;
+		nv1.setFrame4D(nv1.volumes[1].id, currentVol)
 		updateCrosshairPos();
 	};
 	minSlider.oninput = function () {
 		nv1.volumes[1].cal_min= this.value * 0.1;
-		nv1.updateGLVolume();
-	};
-	maxSlider.oninput = function () {
-		nv1.volumes[1].cal_max = this.value * 0.1;
 		nv1.updateGLVolume();
 	}; 
 	gamSlider.oninput = function () {
@@ -219,16 +209,25 @@
 	  if (event.target.id.charAt(0) === "!") {
 		  // set color scheme
 		  const cal_min = nv1.volumes[1].cal_min;
-		  const cal_max = nv1.volumes[1].cal_max;
 		  nv1.volumes[1].colormap = event.target.id.substr(1);
 		  nv1.volumes[1].cal_min = cal_min;
-		  nv1.volumes[1].cal_max = cal_max;
 		  nv1.updateGLVolume();
 		  toggleGroup(event.target.id);
 		  return;
 		}
 	  if (event.target.id.charAt(0) === "_") {
-		  toggleGroup(event.target.id);
+		const cal_min = nv1.volumes[1].cal_min;
+		const curr_crmap = nv1.volumes[1].colormap;
+		nv1.volumes.pop(); //remove current 4D volume
+		let fname = "https://roehrin.github.io/test/src/PSF_" + event.target.id.substr(1).toLowerCase() + '.nii';
+		volumeList1[1].url = fname;
+		await nv1.addVolumeFromUrl(volumeList1[1]);
+		nv1.volumes[1].colormap = curr_crmap;
+		nv1.volumes[1].cal_min = cal_min;
+		nv1.document.labels[0].text = event.target.id.substr(1);
+		nv1.updateGLVolume();
+		nv1.setFrame4D(nv1.volumes[1].id, currentVol);
+		toggleGroup(event.target.id);
 		}
 	}
 	let opts = {
@@ -293,6 +292,9 @@
 	nv1.setMeshShader(nv1.meshes[0].id, "Diffuse");
 	nv1.volumes[0].colorbarVisible = false;
 	nv1.meshes[0].colorbarVisible = false;
+	nv1.addLabel("eLORETA", 
+		{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
+		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
 	nv1.updateGLVolume()
 	let currentVol = 0
 	prevVolume.onclick = function () {
@@ -330,4 +332,7 @@
 		buttons[i].addEventListener("click", onButtonClick, false);
 	}
 	updateCrosshairPos()
+	nv1.setRenderAzimuthElevation(-90-45, 0);
+	
+  
  </script>
