@@ -35,11 +35,18 @@
 			  <i class="fa fa-caret-down"></i>
 			</button>
 			<div class="dropdown-content">
+			<a class="viewBtn" id="!Blue">Blue</a>
+			  <a class="viewBtn" id="!Blue2Cyan">Blue2Cyan</a>
+			  <a class="viewBtn" id="!Bronze">Bronze</a>
+			  <a class="viewBtn" id="!Cividis">Cividis</a>
+			  <a class="viewBtn" id="!Electric_Blue">Electric_Blue</a>
 			  <a class="viewBtn dropdown-item-checked" id="!Hot">Hot</a>
-			  <a class="viewBtn" id="!Plasma">Plasma</a>
-			  <a class="viewBtn" id="!Viridis">Viridis</a>
 			  <a class="viewBtn" id="!Inferno">Inferno</a>
-			  <a class="viewBtn" id="!Random">Random</a>
+			  <a class="viewBtn" id="!Magma">Magma</a>
+			  <a class="viewBtn" id="!Plasma">Plasma</a>
+			  <a class="viewBtn" id="!Rocket">Rocket</a>
+			  <a class="viewBtn" id="!Violet">Violet</a>
+			  <a class="viewBtn" id="!Viridis">Viridis</a>
 			</div>
 		</div>
 		<div class="dropdown">
@@ -50,13 +57,14 @@
 			<div class="dropdown-content">
 				<a class="viewBtn" id="_MNE">MNE</a>
 				<a class="viewBtn" id="_wMNE">wMNE</a>
+				<a class="viewBtn" id="_wMNE2">wMNE2</a>
 				<a class="viewBtn" id="_sLORETA">sLORETA</a>
 				<a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a>
 			</div>
 		</div>
 	</div>
 	<div class="row">
-	<label for="meshMinSlider">Min threshold</label>
+		<label for="meshMinSlider">Min threshold</label>
 		<input
 			type="range"
 			min="0"
@@ -74,6 +82,7 @@
 			class="slider"
 			id="gammaSlider"
 		/>
+		<button id="reset">reset</button>
 	</div>
 	<div class="row" style="width:100%">
 		<p>
@@ -94,17 +103,6 @@
     <main id="container">
 		<canvas id="gl1"></canvas>
     </main>
-  <footer>
-	<label for="edgeSlider">Edge Size</label>
-    <input type="range" min="0" max="100" value="30" class="slider" id="edgeSlider" />
-	<label for="EdThreshSlider">Edge Threshold</label>
-    <input type="range" min="0" max="99" value="0" class="slider" id="EdThreshSlider" />
-    <label for="nodeSlider">Node Size</label>
-    <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
-    <label for="NdThreshSlider">Node Threshold</label>
-    <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
-    <button id="reset">reset</button>
-  </footer>
   </body>
 </html>
 <script type="module" async>
@@ -244,10 +242,13 @@
 	meshXRay: .3,
 	}
 	reset.onclick = function () {
-	nv1.setDefaults(opts, true)
-	nv1.setClipPlane([-0.0, 0, 40])
-	nv1.setClipPlaneThick(1.73)
-	nv1.volumes[0].colorbarVisible = false
+		nv1.setDefaults(opts, true)
+		//nv1.volumes[0].colorbarVisible = false
+		currentVol = 0;
+		srcSlider.value = String(currentVol);
+		srcSlider.oninput()
+		minSlider.value = String(0);
+		nv1.setRenderAzimuthElevation(-90-45, 0);
 	}
 	function updateCrosshairPos(){
 		let dPos = nv1.mm2frac(currSrcPos); // current position of the source, mm convert to frac
