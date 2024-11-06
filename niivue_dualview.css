@@ -39,9 +39,6 @@ footer {
 	flex: 1;
 	background: #404040;
 }
-canvas:focus {
-	outline: red 1px solid;
-}
 .dropdown {
   float: left;
   overflow: hidden;
