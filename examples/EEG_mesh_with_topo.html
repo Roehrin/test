@@ -119,8 +119,14 @@
   }
   meshXRay.oninput = function () {
         nv1.opts.meshXRay = this.value * 0.1
-		if (this.value === "0")nv1.opts.show3Dcrosshair= false;
-		else nv1.opts.show3Dcrosshair= true;
+		if (this.value === "0"){
+			nv1.opts.show3Dcrosshair= false;
+			nv1.meshes[2].visible= false;
+		}
+		else {
+			nv1.opts.show3Dcrosshair= true;
+			nv1.meshes[2].visible= true;
+			}
         nv1.drawScene()
   }
   Xbtn.onclick = function () {
@@ -253,6 +259,7 @@
     backColor: [0.9, 0.9, 1, 1],
 	meshXRay: .5,
 	isOrientCube: true,
+	dragAndDropEnabled: false,
   });
   nv1.setSliceType(nv1.sliceTypeRender);
   nv1.attachTo("gl1");
@@ -323,6 +330,7 @@
   nv1.setRenderAzimuthElevation(0, 90);
   var nv2 = new niivue.Niivue({
     show3Dcrosshair: false,
+	dragAndDropEnabled: false,
 	isColorbar: true,
 	showLegend: false,
     backColor: [0.9, 0.9, 1, 1],
