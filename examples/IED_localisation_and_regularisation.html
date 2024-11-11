@@ -119,11 +119,15 @@
 	const lmbdValues = [0.00001, 0.001, 0.01, 0.05, 0.1]
 	var currentVol = 0;
 	var volumeList1 = [
-	// first item is background image
+	{
+		url: "https://roehrin.github.io/test/src/sub-16_ses-preop_desc-brain_T1w.nii.gz",
+		colormap: "gray",
+		opacity: 1
+	},
 	{
 		url: "https://roehrin.github.io/test/src/source_output.nii",
 		colormap: "hot",
-		opacity: 1,
+		opacity: .6,
 		visible: true,
 		frame4D: 0,
 		cal_min: 0,
@@ -145,15 +149,15 @@
 	} // toggleGroup()
 	lmbdSlider.oninput = function () {
 		currentVol = this.valueAsNumber;
-		nv1.setFrame4D(nv1.volumes[0].id, currentVol)
+		nv1.setFrame4D(nv1.volumes[1].id, currentVol)
 		document.getElementById("lmbdString").innerHTML = lmbdValues[this.valueAsNumber];
 	}
 	minSlider.oninput = function () {
-		nv1.volumes[0].cal_min= Math.min(0.001*this.value*nv1.volumes[0].global_max, .9999*nv1.volumes[0].cal_max);
+		nv1.volumes[1].cal_min= Math.min(0.001*this.value*nv1.volumes[1].global_max, .9999*nv1.volumes[1].cal_max);
 		nv1.updateGLVolume();
 	}; 
 	maxSlider.oninput = function () {
-		nv1.volumes[0].cal_max= Math.max(0.001*this.value*nv1.volumes[0].global_max, 1.00001*nv1.volumes[0].cal_min);
+		nv1.volumes[1].cal_max= Math.max(0.001*this.value*nv1.volumes[1].global_max, 1.00001*nv1.volumes[1].cal_min);
 		nv1.updateGLVolume();
 	}; 
 	gamSlider.oninput = function () {
@@ -199,25 +203,25 @@
 		}
 	  if (event.target.id.charAt(0) === "!") {
 		  // set color scheme
-		  nv1.volumes[0].colormap = event.target.id.substr(1);
-		  nv1.volumes[0].cal_max = nv1.volumes[0].global_max;
+		  nv1.volumes[1].colormap = event.target.id.substr(1);
+		  nv1.volumes[1].cal_max = nv1.volumes[1].global_max;
 		  minSlider.oninput();
 		  maxSlider.oninput();
 		  toggleGroup(event.target.id);
 		  return;
 		}
 	  if (event.target.id.charAt(0) === "_") {
-		const cal_min = nv1.volumes[0].cal_min;
-		const curr_crmap = nv1.volumes[0].colormap;
+		const cal_min = nv1.volumes[1].cal_min;
+		const curr_crmap = nv1.volumes[1].colormap;
 		nv1.volumes.pop(); //remove current 4D volume
 		let fname = "https://roehrin.github.io/test/src/source_output.nii";
 		volumeList1[1].url = fname;
 		await nv1.addVolumeFromUrl(volumeList1[1]);
-		nv1.volumes[0].colormap = curr_crmap;
-		nv1.volumes[0].cal_min = cal_min;
-		nv1.document.labels[0].text = event.target.id.substr(1);
+		nv1.volumes[1].colormap = curr_crmap;
+		nv1.volumes[1].cal_min = cal_min;
+		nv1.document.labels[1].text = event.target.id.substr(1);
 		nv1.updateGLVolume();
-		nv1.setFrame4D(nv1.volumes[0].id, currentVol);
+		nv1.setFrame4D(nv1.volumes[1].id, currentVol);
 		toggleGroup(event.target.id);
 		}
 	}
@@ -237,7 +241,8 @@
 	}
 	reset.onclick = function () {
 		nv1.setDefaults(opts, true)
-		nv1.volumes[0].colorbarVisible = true,
+		nv1.volumes[0].colorbarVisible = false,
+		nv1.volumes[1].colorbarVisible = true,
 		currentVol = 0;
 		minSlider.value = String(0);
 		maxSlider.value = String(1000);
@@ -248,12 +253,12 @@
 	var nv1 = new niivue.Niivue(opts)
 	nv1.attachTo("gl1")
 	await nv1.loadVolumes(volumeList1)
-	//nv1.volumes[0].colorbarVisible = false;
+	nv1.volumes[0].colorbarVisible = false;
 	document.getElementById("lmbdString").innerHTML = lmbdValues[0];
 	nv1.addLabel("eLORETA", 
 		{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
 		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
-	nv1.volumes[0].cal_max = nv1.volumes[0].global_max;
+	nv1.volumes[1].cal_max = nv1.volumes[1].global_max;
 	nv1.updateGLVolume()
 	var buttons = document.getElementsByClassName("viewBtn");
 	for (let i = 0; i < buttons.length; i++){
