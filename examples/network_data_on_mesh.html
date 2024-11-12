@@ -115,7 +115,7 @@
   var opt = {
 	show3Dcrosshair: true,
 	isColorbar: true,
-	showLegend: false,
+	showLegend: false
 	backColor: [0.9, 0.9, 1, 1],
 	meshXRay: 0,
 	isOrientCube: true,
@@ -157,10 +157,9 @@
 	  layers: meshLayersL,
     },
   ];
-  //await nv1.loadVolumes(volumeList1);
-  await nv1.loadMeshes(MeshList);
-  await nv2.loadMeshes(MeshList);
-  await nv3.loadMeshes(MeshList);
+  nv1.loadMeshes(MeshList);
+  nv2.loadMeshes(MeshList);
+  nv3.loadMeshes(MeshList);
   await nv4.loadMeshes(MeshList);
   
   const allValuesR = nv1.meshes[0].layers[0].values;
@@ -180,8 +179,10 @@
 	let maxL = currValuesL.sort((a, b) => b - a)[0];
 	maxList.push(Math.max(maxR,maxL));
 	nvList[i].meshes[0].layers[0].colorbarVisible = false; // same colour map for left and right hemisphere
-	nvList[i].setMeshShader(nvList[i].meshes[0].id, "Edge");
-	nvList[i].setMeshShader(nvList[i].meshes[1].id, "Edge");
+	// some shaders do not render the interior of the Mesh
+	// those do: Crevice (odd), Flat (not smoothing), Harmonic, Matcap, Matte, Phong, Toon 
+	nvList[i].setMeshShader(nvList[i].meshes[0].id, "Matte"); 
+	nvList[i].setMeshShader(nvList[i].meshes[1].id, "Matte");
 	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "frame4D", i);
 	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "frame4D", i);
 	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormap", colormapList[i]);
