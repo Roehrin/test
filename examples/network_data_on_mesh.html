@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>4D Meshes - Network measures</title>
+	<link rel="stylesheet" href="../niivue_dualview.css" />
+  </head>
+  <body>
+    <noscript>
+      <strong
+        >niivue doesn't work properly without JavaScript enabled. Please enable
+        it to continue.</strong
+      >
+    </noscript>
+    <header>
+	<h3>Displaying network data computed for different frequency bands in sync</h3>
+	<div class='row'>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="meshMinSlider">Min threshold</label>
+			<input
+				type="range"
+				min="0"
+				max="1000"
+				value="0"
+				class="slider"
+				id="meshMinSlider"
+			/>
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="meshMaxSlider">Max threshold</label>
+			<input
+				type="range"
+				min="0"
+				max="1000"
+				value="1000"
+				class="slider"
+				id="meshMaxSlider"
+			/>
+			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+				Show:
+				<input type="checkbox"  id="leftCheck" checked />
+				<label for="leftCheck">Left hemishpere</label>
+				<input type="checkbox"  id="rightCheck" checked />
+				<label for="rightCheck">Right hemishpere</label>
+			</div>
+	</div>
+</header>
+    <main id="container">
+	<div class='page-wrapper'>
+        <div class='row'>
+          <div class='column'>
+			<div>
+              <canvas id="gl1" height="400">
+			</div>
+          </div>
+          <div class='column'>
+			<div>
+              <canvas id="gl2" height="400">
+			</div>
+          </div>
+		</div>
+		<div class='row'>
+		  <div class='column'>
+			<div>
+              <canvas id="gl3" height="400">
+			</div>
+          </div>
+		  <div class='column'>
+			<div>
+              <canvas id="gl4" height="400">
+			</div>
+          </div>
+		</div>
+    </div>
+    </main>
+  </body>
+</html>
+<script type="module" async>
+  import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
+  
+  var minSlider = document.getElementById("meshMinSlider");
+  var maxSlider = document.getElementById("meshMaxSlider");
+  var lhBtn = document.getElementById("leftCheck");
+  var rhBtn = document.getElementById("rightCheck");
+  lhBtn.oninput = function () {
+	let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].setMeshProperty(nvList[i].meshes[1].id, "visible", lhBtn.checked);  
+	}
+  }
+  rhBtn.oninput = function () {
+	let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].setMeshProperty(nvList[i].meshes[0].id, "visible", rhBtn.checked);  
+	}
+  }
+  minSlider.oninput = function () {
+	let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_min", this.value * 0.001 * maxList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_min", this.value * 0.001 * maxList[i]);  
+	}
+  };
+  maxSlider.oninput = function () {
+    let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_max", this.value * 0.001 * maxList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_max", this.value * 0.001 * maxList[i]);  
+	}
+  };
+  var opt = {
+	show3Dcrosshair: true,
+	isColorbar: true,
+	showLegend: false,
+	backColor: [0.9, 0.9, 1, 1],
+	meshXRay: 0,
+	isOrientCube: true,
+	dragAndDropEnabled: false,
+  }
+  var nv1 = new niivue.Niivue(opt);
+  var nv2 = new niivue.Niivue(opt);
+  var nv3 = new niivue.Niivue(opt);
+  var nv4 = new niivue.Niivue(opt);
+  nv1.attachTo("gl1");
+  nv2.attachTo("gl2");
+  nv3.attachTo("gl3");
+  nv4.attachTo("gl4");
+  var meshLayersR = [{
+      url: "https://roehrin.github.io/test/src/integration_on_rh__mesh.gii",
+	  colormap: "hot",
+	  colormapNegative: "",
+	  cal_min: 0,
+      cal_max: 1,
+      useNegativeCmap: false,
+      opacity: 1,
+    }];
+  var meshLayersL = [{
+      url: "https://roehrin.github.io/test/src/integration_on_lh_mesh.gii",
+	  colormap: "hot",
+	  colormapNegative: "",
+	  cal_min: 0,
+      cal_max: 1,
+      useNegativeCmap: false,
+      opacity: 1,
+  }];
+  var MeshList = [
+    {
+      url: "https://roehrin.github.io/test/src/rh_mesh.gii",
+	  layers: meshLayersR,
+    },
+	{
+      url: "https://roehrin.github.io/test/src/lh_mesh.gii",
+	  layers: meshLayersL,
+    },
+  ];
+  //await nv1.loadVolumes(volumeList1);
+  await nv1.loadMeshes(MeshList);
+  await nv2.loadMeshes(MeshList);
+  await nv3.loadMeshes(MeshList);
+  await nv4.loadMeshes(MeshList);
+  
+  const allValuesR = nv1.meshes[0].layers[0].values;
+  const allValuesL = nv1.meshes[1].layers[0].values;
+  const nFrame4D = nv1.meshes[1].layers[0].nFrame4D;
+  const nVerticesR = allValuesR.length/nFrame4D;
+  const nVerticesL = allValuesL.length/nFrame4D;
+  const colormapList = ["hot", "electric_blue", "mako", "rocket"];
+  const freqBandList = ["delta", "theta", "alpha", "beta"];
+  var maxList = [];
+  let nvList = [nv1, nv2, nv3, nv4];
+  
+  for (let i = 0; i < nvList.length; i++) {
+	let currValuesR = allValuesR.slice(nVerticesR*i,nVerticesR*(i+1)).filter(function (value) { return !Number.isNaN(value)});
+	let currValuesL = allValuesL.slice(nVerticesL*i,nVerticesL*(i+1)).filter(function (value) { return !Number.isNaN(value)});
+	let maxR = currValuesR.sort((a, b) => b - a)[0]; // Math.max does not work for big array
+	let maxL = currValuesL.sort((a, b) => b - a)[0];
+	maxList.push(Math.max(maxR,maxL));
+	nvList[i].meshes[0].layers[0].colorbarVisible = false; // same colour map for left and right hemisphere
+	nvList[i].setMeshShader(nvList[i].meshes[0].id, "Edge");
+	nvList[i].setMeshShader(nvList[i].meshes[1].id, "Edge");
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "frame4D", i);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "frame4D", i);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormap", colormapList[i]);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormap", colormapList[i]);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_max", maxList[i]);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_max", maxList[i]); 
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormapInvert", true);
+	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormapInvert", true);
+	// labels do not seem to be displayed in render view
+	//nvList[i].addLabel(freqBandList[i], 
+	//	{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [0, 0, 0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 1] }, 
+	//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);
+	
+  }
+  nv1.broadcastTo([nv2, nv3, nv4], { "3d": true, "2d": true });
+  nv2.broadcastTo([nv1, nv3, nv4], { "3d": true, "2d": true });
+  nv3.broadcastTo([nv1, nv2, nv4], { "3d": true, "2d": true });
+  nv4.broadcastTo([nv1, nv2, nv3], { "3d": true, "2d": true });
+  maxSlider.oninput();
+  minSlider.oninput();
+  nv1.updateGLVolume()
+</script>
