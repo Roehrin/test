@@ -115,7 +115,7 @@
   var opt = {
 	show3Dcrosshair: true,
 	isColorbar: true,
-	showLegend: false
+	showLegend: false,
 	backColor: [0.9, 0.9, 1, 1],
 	meshXRay: 0,
 	isOrientCube: true,
@@ -157,9 +157,9 @@
 	  layers: meshLayersL,
     },
   ];
-  nv1.loadMeshes(MeshList);
-  nv2.loadMeshes(MeshList);
-  nv3.loadMeshes(MeshList);
+  await nv1.loadMeshes(MeshList);
+  await nv2.loadMeshes(MeshList);
+  await nv3.loadMeshes(MeshList);
   await nv4.loadMeshes(MeshList);
   
   const allValuesR = nv1.meshes[0].layers[0].values;
