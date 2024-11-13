@@ -47,6 +47,18 @@
 				<input type="checkbox"  id="rightCheck" checked />
 				<label for="rightCheck">Right hemishpere</label>
 			</div>
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+				<label for="intMetric">Integration</label>
+				<input type="radio" id="intMetric" name="ntwrkMetric" checked>
+				<label for="segMetric">Segregation</label>
+				<input type="radio" id="segMetric" name="ntwrkMetric">
+			</div>	
+			<div style="outline: #505050 2px solid; padding: 2px 10px;">
+				<label for="roiData">EEG</label>
+				<input type="radio" id="roiData" name="modType" checked>
+				<label for="seegData">iEEG</label>
+				<input type="radio" id="seegData" name="modType">
+			</div>
 	</div>
 </header>
     <main id="container">
@@ -86,6 +98,30 @@
   var maxSlider = document.getElementById("meshMaxSlider");
   var lhBtn = document.getElementById("leftCheck");
   var rhBtn = document.getElementById("rightCheck");
+  document.getElementById("intMetric").addEventListener("input", changeLayer);
+  document.getElementById("segMetric").addEventListener("input", changeLayer);
+  document.getElementById("roiData").addEventListener("input", changeLayer);
+  document.getElementById("seegData").addEventListener("input", changeLayer);
+  async function changeLayer(){
+	if (intMetric.checked){metric = "integration"}
+	else{metric = "segregation"}
+	if (roiData.checked){modality = "roi"}
+	else{modality = "ieeg_roi"}
+	let fname = "https://roehrin.github.io/test/src/" + metric + "_" + modality + "_on_rh_mesh.gii";
+	console.log(fname)
+	meshLayersR[0].url = fname;
+	meshLayersL[0].url = fname.replace("_rh_", "_lh_");
+	let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].meshes[0].layers = []; // remove current layer
+		nvList[i].meshes[1].layers = []; // remove current layer
+		await niivue.NVMesh.loadLayer(meshLayersR[0], nvList[i].meshes[0]);
+		await niivue.NVMesh.loadLayer(meshLayersL[0], nvList[i].meshes[1]);
+	}
+	allValuesR = nv1.meshes[0].layers[0].values;
+	allValuesL = nv1.meshes[1].layers[0].values
+	await affectFrame();
+  }
   lhBtn.oninput = function () {
 	let nvList = [nv1, nv2, nv3, nv4];
 	for (let i = 0; i < nvList.length; i++) {
@@ -161,47 +197,52 @@
   await nv2.loadMeshes(MeshList);
   await nv3.loadMeshes(MeshList);
   await nv4.loadMeshes(MeshList);
-  
-  const allValuesR = nv1.meshes[0].layers[0].values;
-  const allValuesL = nv1.meshes[1].layers[0].values;
+  var modality = "roi";
+  var metric = "integration";
+  var allValuesR = nv1.meshes[0].layers[0].values;
+  var allValuesL = nv1.meshes[1].layers[0].values;
   const nFrame4D = nv1.meshes[1].layers[0].nFrame4D;
   const nVerticesR = allValuesR.length/nFrame4D;
   const nVerticesL = allValuesL.length/nFrame4D;
   const colormapList = ["hot", "electric_blue", "mako", "rocket"];
   const freqBandList = ["delta", "theta", "alpha", "beta"];
   var maxList = [];
-  let nvList = [nv1, nv2, nv3, nv4];
   
-  for (let i = 0; i < nvList.length; i++) {
-	let currValuesR = allValuesR.slice(nVerticesR*i,nVerticesR*(i+1)).filter(function (value) { return !Number.isNaN(value)});
-	let currValuesL = allValuesL.slice(nVerticesL*i,nVerticesL*(i+1)).filter(function (value) { return !Number.isNaN(value)});
-	let maxR = currValuesR.sort((a, b) => b - a)[0]; // Math.max does not work for big array
-	let maxL = currValuesL.sort((a, b) => b - a)[0];
-	maxList.push(Math.max(maxR,maxL));
-	nvList[i].meshes[0].layers[0].colorbarVisible = false; // same colour map for left and right hemisphere
-	// some shaders do not render the interior of the Mesh
-	// those do: Crevice (odd), Flat (not smoothing), Harmonic, Matcap, Matte, Phong, Toon 
-	nvList[i].setMeshShader(nvList[i].meshes[0].id, "Matte"); 
-	nvList[i].setMeshShader(nvList[i].meshes[1].id, "Matte");
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "frame4D", i);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "frame4D", i);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormap", colormapList[i]);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormap", colormapList[i]);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_max", maxList[i]);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_max", maxList[i]); 
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormapInvert", true);
-	nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormapInvert", true);
-	// labels do not seem to be displayed in render view
-	//nvList[i].addLabel(freqBandList[i], 
-	//	{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [0, 0, 0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 1] }, 
-	//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);
-	
+  function affectFrame(){
+	maxList = [];
+	let nvList = [nv1, nv2, nv3, nv4];
+	for (let i = 0; i < nvList.length; i++) {
+		let currValuesR = allValuesR.slice(nVerticesR*i,nVerticesR*(i+1)).filter(function (value) { return !Number.isNaN(value)});
+		let currValuesL = allValuesL.slice(nVerticesL*i,nVerticesL*(i+1)).filter(function (value) { return !Number.isNaN(value)});
+		let maxR = currValuesR.sort((a, b) => b - a)[0]; // Math.max does not work for big array
+		let maxL = currValuesL.sort((a, b) => b - a)[0];
+		maxList.push(Math.max(maxR,maxL));
+		nvList[i].meshes[0].layers[0].colorbarVisible = false; // same colour map for left and right hemisphere
+		// some shaders do not render the interior of the Mesh
+		// those do: Crevice (odd), Flat (not smoothing), Harmonic, Matcap, Matte, Phong, Toon 
+		nvList[i].setMeshShader(nvList[i].meshes[0].id, "Matte"); 
+		nvList[i].setMeshShader(nvList[i].meshes[1].id, "Matte");
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "frame4D", i);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "frame4D", i);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormap", colormapList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormap", colormapList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_max", maxList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_max", maxList[i]);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "cal_min", 0);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_min", 0); 		
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormapInvert", true);
+		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormapInvert", true);
+		// labels do not seem to be displayed in render view
+		//nvList[i].addLabel(freqBandList[i], 
+		//	{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [0, 0, 0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 1] }, 
+		//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);s
+	}
+	maxSlider.oninput();
+	minSlider.oninput();
   }
   nv1.broadcastTo([nv2, nv3, nv4], { "3d": true, "2d": true });
   nv2.broadcastTo([nv1, nv3, nv4], { "3d": true, "2d": true });
   nv3.broadcastTo([nv1, nv2, nv4], { "3d": true, "2d": true });
   nv4.broadcastTo([nv1, nv2, nv3], { "3d": true, "2d": true });
-  maxSlider.oninput();
-  minSlider.oninput();
-  nv1.updateGLVolume()
+  affectFrame();
 </script>
