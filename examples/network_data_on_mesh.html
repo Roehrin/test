@@ -113,6 +113,7 @@
 	meshLayersL[0].url = fname.replace("_rh_", "_lh_");
 	let nvList = [nv1, nv2, nv3, nv4];
 	for (let i = 0; i < nvList.length; i++) {
+		nvList[i].drawThumbnail();
 		nvList[i].meshes[0].layers = []; // remove current layer
 		nvList[i].meshes[1].layers = []; // remove current layer
 		await niivue.NVMesh.loadLayer(meshLayersR[0], nvList[i].meshes[0]);
@@ -151,7 +152,7 @@
   var opt = {
 	show3Dcrosshair: true,
 	isColorbar: true,
-	showLegend: false,
+	showLegend: true,
 	backColor: [0.9, 0.9, 1, 1],
 	meshXRay: 0,
 	isOrientCube: true,
@@ -232,13 +233,14 @@
 		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "cal_min", 0); 		
 		nvList[i].setMeshLayerProperty(nvList[i].meshes[0].id, 0, "colormapInvert", true);
 		nvList[i].setMeshLayerProperty(nvList[i].meshes[1].id, 0, "colormapInvert", true);
-		// labels do not seem to be displayed in render view
-		//nvList[i].addLabel(freqBandList[i], 
-		//	{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [0, 0, 0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 1] }, 
-		//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);s
 	}
 	maxSlider.oninput();
 	minSlider.oninput();
+  }
+  let nvList = [nv1, nv2, nv3, nv4];
+  for (let i = 0; i < nvList.length; i++) {
+  nvList[i].addLabel(freqBandList[i], 
+    		{ textScale: 1.5, textAlignment: niivue.LabelTextAlignment.RIGHT },[0,0,0], niivue.LabelAnchorPoint.NONE);
   }
   nv1.broadcastTo([nv2, nv3, nv4], { "3d": true, "2d": true });
   nv2.broadcastTo([nv1, nv3, nv4], { "3d": true, "2d": true });
