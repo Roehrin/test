@@ -56,7 +56,7 @@
 			</button>
 			<div class="dropdown-content">
 				<a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a>
-				<a class="viewBtn dropdown-item-checked" id="_LCMV">LCMV</a>
+				<a class="viewBtn dropdown" id="_LCMV">LCMV</a>
 			</div>
 		</div>
 	</div>
@@ -152,7 +152,7 @@
 		opacity: 1
 	},
 	{
-		url: "https://roehrin.github.io/test/src/source_output.nii",
+		url: "https://roehrin.github.io/test/src/sub-16_meth-eloreta.nii",
 		colormap: "hot",
 		opacity: .6,
 		visible: true,
@@ -279,9 +279,7 @@
 	  if (event.target.id.charAt(0) === "!") {
 		  // set color scheme
 		  nv1.volumes[1].colormap = event.target.id.substr(1);
-		  nv1.volumes[1].cal_max = currentMax;
-		  minSlider.oninput();
-		  maxSlider.oninput();
+		  lmbdSlider.oninput()
 		  toggleGroup(event.target.id);
 		  return;
 		}
@@ -294,7 +292,7 @@
 		volumeList1[1].url = fname;
 		await nv1.addVolumeFromUrl(volumeList1[1]);
 		nv1.volumes[1].colormap = curr_crmap;
-		nv1.document.labels[1].text = currMethod;
+		nv1.document.labels[0].text = currMethod;
 		imgESI = nv1.volumes[1].valueOf();
 		lmbdSlider.oninput()
 		toggleGroup(event.target.id);
