@@ -56,6 +56,7 @@
 			</button>
 			<div class="dropdown-content">
 				<a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a>
+				<a class="viewBtn dropdown-item-checked" id="_LCMV">LCMV</a>
 			</div>
 		</div>
 	</div>
@@ -287,15 +288,15 @@
 	  if (event.target.id.charAt(0) === "_") {
 		const cal_min = nv1.volumes[1].cal_min;
 		const curr_crmap = nv1.volumes[1].colormap;
+		let currMethod = event.target.id.substr(1);
 		nv1.volumes.pop(); //remove current 4D volume
-		let fname = "https://roehrin.github.io/test/src/source_output.nii";
+		let fname = "https://roehrin.github.io/test/src/sub-16_meth-" + currMethod.toLowerCase() + ".nii";
 		volumeList1[1].url = fname;
 		await nv1.addVolumeFromUrl(volumeList1[1]);
 		nv1.volumes[1].colormap = curr_crmap;
-		nv1.volumes[1].cal_min = cal_min;
-		nv1.document.labels[1].text = event.target.id.substr(1);
-		nv1.updateGLVolume();
-		nv1.setFrame4D(nv1.volumes[1].id, currentVol);
+		nv1.document.labels[1].text = currMethod;
+		imgESI = nv1.volumes[1].valueOf();
+		lmbdSlider.oninput()
 		toggleGroup(event.target.id);
 		}
 	}
