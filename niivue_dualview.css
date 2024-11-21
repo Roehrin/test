@@ -37,6 +37,7 @@ footer {
 	flex-direction: column;
 	flex-basis: 100%;
 	flex: 1;
+	align-items: stretch;
 	background: #404040;
 }
 .dropdown {
