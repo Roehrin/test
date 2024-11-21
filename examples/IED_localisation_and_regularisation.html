@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Investigate impact of regularisation on inverse solution.</title>
-    <link rel="stylesheet" href="../niivue.css" />
+    <link rel="stylesheet" href="../niivue_dualview.css" />
   </head>
   <body>
     <noscript>niivue requires JavaScript.</noscript>
@@ -61,85 +62,97 @@
 		</div>
 	</div>
 	<div class="row">
-		<div class="column">
-			<div style="outline: #505050 2px solid; padding: 2px 10px;">
-				<label for="MinSlider">Min threshold</label>
+		<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="MinSlider">Min threshold</label>
+			<input
+				type="range"
+				min="0"
+				max="999"
+				value="0"
+				class="slider"
+				id="MinSlider"
+			/>
+			<label for="MaxSlider">Max threshold</label>
 				<input
 					type="range"
-					min="0"
-					max="999"
-					value="0"
+					min="1"
+					max="1000"
+					value="1000"
 					class="slider"
-					id="MinSlider"
+					id="MaxSlider"
 				/>
-				<label for="MaxSlider">Max threshold</label>
-					<input
-						type="range"
-						min="1"
-						max="1000"
-						value="1000"
-						class="slider"
-						id="MaxSlider"
-					/>
-				<label style="border-left: 2px solid grey; padding-left: 2px">
-				<input type="checkbox"  id="percThrCheck" />
-				<label for="percThrCheck">% thresolding </label>
-				<input type="radio" disabled="true" checked id="prec20Btn" name="percThr">
-				<label for="prec20Btn">20%</label>
-				<input type="radio" disabled="true" id="prec10Btn" name="percThr">
-				<label for="prec10Btn">10%</label>
-				<input type="radio" disabled="true" id="prec5Btn" name="percThr">
-				<label for="prec5Btn">5%</label>
-				<input type="radio" disabled="true" id="prec1Btn" name="percThr">
-				<label for="prec1Btn">1%</label>
-			</div>
+			<label style="border-left: 2px solid grey; padding-left: 2px">
+			<input type="checkbox"  id="percThrCheck" />
+			<label for="percThrCheck">% thresolding </label>
+			<input type="radio" disabled="true" checked id="prec20Btn" name="percThr">
+			<label for="prec20Btn">20%</label>
+			<input type="radio" disabled="true" id="prec10Btn" name="percThr">
+			<label for="prec10Btn">10%</label>
+			<input type="radio" disabled="true" id="prec5Btn" name="percThr">
+			<label for="prec5Btn">5%</label>
+			<input type="radio" disabled="true" id="prec1Btn" name="percThr">
+			<label for="prec1Btn" style="padding-right: 10px;">1%</label>
 		</div>
-		<div class="column">
-			<div style="outline: #505050 2px solid; padding-left: 2px;">
-				<label for="gammaSlider">Gamma</label>
-				<input
-					type="range"
-					min="10"
-					max="400"
-					value="100"
-					class="slider"
-					id="gammaSlider"
-				/>
-			</div>
-		</div>
-		<div class="column">
-		<button id="reset">reset</button>
+		<div style="padding-left: 10px;">
+			<button id="reset" style="width:40px"; >reset</button>
 		</div>
 	</div>
-	<div class="row" style="width:100%">
-		<p>
-		<label for="lmbdSlider">Lambda:</label>
-		<input
-			type="range"
-			min="0"
-			max="4"
-			value="0"
-			class="slider"
-			style="width:25%"
-			id="lmbdSlider"
-		/>
-		<label id="lmbdString">0</label>
+	<div class="row">
+		<div style="outline: #505050 2px solid; padding: 2px 10px;">
+			<label for="timeSlider">Time point:</label>
+			<input
+				type="range"
+				min="0"
+				max="4"
+				value="2"
+				class="slider"
+				id="timeSlider"
+			/>
+			<label id="timeString" style="padding-right: 10px;">.48</label>
+			<label for="lmbdSlider"  style="border-left: 2px solid grey; padding-left: 10px;">Lambda:</label>
+			<input
+				type="range"
+				min="0"
+				max="4"
+				value="0"
+				class="slider"
+				id="lmbdSlider"
+			/>
+			<label id="lmbdString" style="padding-right: 10px;">0</label>
+		</div>
 	</div>
   </header>
     <main id="container">
-		<canvas id="gl1"></canvas>
+	<div class='page-wrapper'>
+        <div class='row'>
+		  <div class='column' >
+			  <div style="height:300px">
+              <canvas id="gl_topo">
+			  </div>
+			  <div id="iedTrace"></div>
+
+		  </div>
+          <div class='column'>
+              <canvas id="gl1">
+          </div>
+        </div>
+    </div>
     </main>
   </body>
 </html>
 <script type="module" async>
+
 	import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
 	var lmbdSlider = document.getElementById("lmbdSlider");
 	var minSlider = document.getElementById("MinSlider");
 	var maxSlider = document.getElementById("MaxSlider");
-	var gamSlider = document.getElementById("gammaSlider");
+	var timeSlider = document.getElementById("timeSlider");
 	const lmbdCount = 5;
-	const lmbdValues = [0.00001, 0.001, 0.01, 0.05, 0.1]
-	var currentVol = 0;
+	const lmbdValues = [0.00001, 0.001, 0.01, 0.05, 0.1];
+	const timePoints = [0.2, 0.452, 0.48, 0.508, 0.7];
+	var currTimeIdx = 3;
+	var currLambdaIdx = 3;
+	var currMethod = "eLORETA";
 	var perc20Btn = document.getElementById('prec20Btn');
 	var perc10Btn = document.getElementById('prec10Btn');
 	var perc5Btn = document.getElementById('prec5Btn');
@@ -152,7 +165,7 @@
 		opacity: 1
 	},
 	{
-		url: "https://roehrin.github.io/test/src/sub-16_meth-eloreta.nii",
+		url: "https://roehrin.github.io/test/IED_source/sub-16_meth-eloreta_0.48s.nii",
 		colormap: "hot",
 		opacity: .6,
 		visible: true,
@@ -210,13 +223,26 @@
 		buttons[i].classList.add("dropdown-item-checked");
 	}
 	} // toggleGroup()
+	timeSlider.oninput = async function () {
+		currTimeIdx = this.valueAsNumber;
+		let currSamp = Math.round(timePoints[currTimeIdx]*Fs);
+		nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", currSamp);
+		let currTopo = topoValues.slice(currSamp*nElec, (currSamp+1)*nElec)
+		nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "cal_max", Math.max(...currTopo.map(Math.abs)));
+		layout.shapes[0].x0 = timePoints[currTimeIdx];
+		layout.shapes[0].x1 = timePoints[currTimeIdx];
+		Plotly.redraw('iedTrace');
+		await loadESI()
+		document.getElementById("timeString").innerHTML = timePoints[currTimeIdx] + 's';
+		lmbdSlider.oninput();
+	}
 	lmbdSlider.oninput = function () {
-		currentVol = this.valueAsNumber;
+		currLambdaIdx = this.valueAsNumber;
 		orderCurrValues();
 		// order currValues - faster for percentage thresholding to store values in descending order
 		currentMax = currValues[0];
 		nv1.volumes[1].cal_max = currentMax;
-		nv1.setFrame4D(nv1.volumes[1].id, currentVol)
+		nv1.setFrame4D(nv1.volumes[1].id, currLambdaIdx)
 		// if percThrCheck unchecked simply adjust the max of the colour bar to the max of the current volume
 		if (percThrCheck.checked){
 			// if checked display the P% sources by adjusting the currentMin
@@ -228,16 +254,13 @@
 		document.getElementById("lmbdString").innerHTML = lmbdValues[this.valueAsNumber];
 	}
 	minSlider.oninput = function () {
-		nv1.volumes[1].cal_min= Math.min(0.001*this.value*currentMax, .9999*nv1.volumes[1].cal_max);
+		nv1.volumes[1].cal_min = Math.min(0.001*this.value*currentMax, .9999*nv1.volumes[1].cal_max);
 		nv1.updateGLVolume();
 	}; 
 	maxSlider.oninput = function () {
 		nv1.volumes[1].cal_max= Math.max(0.001*this.value*currentMax, 1.00001*nv1.volumes[1].cal_min);
 		nv1.updateGLVolume();
 	}; 
-	gamSlider.oninput = function () {
-		nv1.setGamma(this.value * 0.01);
-	};
 	async function onButtonClick(event) {
 	  if (event.target.id.charAt(0) === "|") {
 		  //sliceType
@@ -284,19 +307,22 @@
 		  return;
 		}
 	  if (event.target.id.charAt(0) === "_") {
-		const cal_min = nv1.volumes[1].cal_min;
-		const curr_crmap = nv1.volumes[1].colormap;
-		let currMethod = event.target.id.substr(1);
-		nv1.volumes.pop(); //remove current 4D volume
-		let fname = "https://roehrin.github.io/test/src/sub-16_meth-" + currMethod.toLowerCase() + ".nii";
-		volumeList1[1].url = fname;
-		await nv1.addVolumeFromUrl(volumeList1[1]);
-		nv1.volumes[1].colormap = curr_crmap;
+		currMethod = event.target.id.substr(1);
+		//const cal_min = nv1.volumes[1].cal_min;
+		await loadESI()
 		nv1.document.labels[0].text = currMethod;
-		imgESI = nv1.volumes[1].valueOf();
 		lmbdSlider.oninput()
 		toggleGroup(event.target.id);
 		}
+	}
+	async function loadESI() {
+		const curr_crmap = nv1.volumes[1].colormap;
+		nv1.volumes.pop(); //remove current 4D volume
+		let fname = "https://roehrin.github.io/test/IED_source/sub-16_meth-" + currMethod.toLowerCase() + "_" + timePoints[currTimeIdx] +"s.nii";
+		volumeList1[1].url = fname;
+		await nv1.addVolumeFromUrl(volumeList1[1]);
+		imgESI = nv1.volumes[1].valueOf();
+		nv1.volumes[1].colormap = curr_crmap;
 	}
 	let opts = {
 	show3Dcrosshair: true,
@@ -306,7 +332,7 @@
 	dragAndDropEnabled: false,
 	isNearestInterpolation: true,
 	//sliceType: niivue.SLICE_TYPE.RENDER,
-	//multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
+	multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
 	multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
 	isOrientCube: true,
 	showLegend: false,
@@ -316,7 +342,7 @@
 		nv1.setDefaults(opts, true)
 		nv1.volumes[0].colorbarVisible = false,
 		nv1.volumes[1].colorbarVisible = true,
-		currentVol = 0;
+		currLambdaIdx = 0;
 		minSlider.value = String(0);
 		maxSlider.value = String(1000);
 		minSlider.oninput();
@@ -343,11 +369,106 @@
 		buttons[i].addEventListener("click", onButtonClick, false);
 	}
 	nv1.setRenderAzimuthElevation(-90-45, 0);
-	var currValues = imgESI.img.slice(volSize*(currentVol),volSize*(currentVol+1));
+	var currValues = imgESI.img.slice(volSize*(currLambdaIdx),volSize*(currLambdaIdx+1));
 	function orderCurrValues(){
-		currValues = imgESI.img.slice(volSize*(currentVol),volSize*(currentVol+1));
+		currValues = imgESI.img.slice(volSize*(currLambdaIdx),volSize*(currLambdaIdx+1));
 		currValues = currValues.filter(function (value) { return !Number.isNaN(value)});
 		currValues.sort((a, b) => b - a)
 	}
 	orderCurrValues();
+	// init environement for topo plot
+	var nv2 = new niivue.Niivue({
+    show3Dcrosshair: false,
+	dragAndDropEnabled: false,
+	isColorbar: true,
+	showLegend: false,
+    backColor: [0.9, 0.9, 1, 1],
+	meshXRay: 0,
+	isOrientCube: false,
+  });
+	nv2.attachTo("gl_topo");
+	var meshLayersList = [
+    {
+      url: "https://roehrin.github.io/test/IED_source/sub-16_ses-preop_elecMesh2D.gii",
+	  colormap: "hot",
+	  colormapNegative: "electric_blue",
+	  cal_min: 0,
+      cal_max: 1,
+      useNegativeCmap: true,
+      opacity: 1,
+    }
+  ];
+	await nv2.loadMeshes([
+		{
+		  url: "https://roehrin.github.io/test/IED_source/sub-16_ses-preop_elecMesh2D.gii",
+		  layers: meshLayersList,
+		}
+	]);
+	nv2.setMeshShader(nv2.meshes[0].id, "Diffuse");
+	var nElec = 204;
+	var Fs = 250; // known sampling frequency
+	var topoValues = nv2.meshes[0].layers[0].values
+	let currSamp = Math.round(timePoints[currTimeIdx]*Fs);
+	let currTopo = topoValues.slice(currSamp*nElec, (currSamp+1)*nElec)
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "frame4D", currSamp);
+	nv2.setMeshLayerProperty(nv2.meshes[0].id, 0, "cal_max", Math.max(...currTopo.map(Math.abs)));
+	//nv2.meshes[1].colorbarVisible = false;
+	//nv2.meshes[0].layers[1].colorbarVisible = false;
+	nv2.setRenderAzimuthElevation(0, 90);
+	// init the plot of the EEG traces
+	function convertTopo2EEG(){
+		let nSamples = topoValues.length/nElec;
+		// create time vector
+		let timeVec = Array.from({length: nSamples}, (_, i) => (i + 1)/Fs);
+		// init data by pre-allocating ys as vector of zeros
+		var data = [];
+		// important because data are multiplex
+		for (let i = 0; i < nElec; i++) {
+			let dummyLine = {x:timeVec, y:Array(nSamples).fill(0), mode: "lines", line: {color: 'rgb(0,0,0)'}}; 
+			data.push(dummyLine);
+		}
+		for (let sampId = 0; sampId < nSamples; sampId++) {
+			let currTopo = topoValues.slice(sampId*nElec, (sampId+1)*nElec)
+			for (let elId = 0; elId < nElec; elId++) {
+				data[elId].y[sampId] = currTopo[elId]
+			}
+		}
+		return data
+	}
+	var eegData = convertTopo2EEG();
+	var layout = {
+	  title: {
+		text: 'IED'
+	  },
+	  xaxis: {
+		  title: {
+			text: 'Time [s]'
+		  },
+		  automargin: true,
+		  tickfont: { size: 14}
+	  },
+	  yaxis: {
+		  title: {
+			text: 'Amplitude'
+		  },
+		  automargin: true,
+		  tickfont: { size: 14}
+	  },
+	  hovermode: false,
+	  showlegend: false,
+	  shapes: [{
+		type: 'line',
+		x0: timePoints[currTimeIdx],
+		y0: 0,
+		x1: timePoints[currTimeIdx],
+		yref: 'paper',
+		y1: 1,
+		line: {
+		  color: 'red',
+		  width: 5,
+		  dash: 'dot'
+		}
+	  }]
+	};
+	Plotly.newPlot('iedTrace', eegData, layout);
  </script>
