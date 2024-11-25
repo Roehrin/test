@@ -367,14 +367,14 @@
 	for (let i = 0; i < buttons.length; i++){
 		buttons[i].addEventListener("click", onButtonClick, false);
 	}
-	nv1.setRenderAzimuthElevation(-90-45, 0);
+	nv1.setRenderAzimuthElevation(90, 0);
 	var currValues = imgESI.img.slice(volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)),volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)+1));
 	function orderCurrValues(){
 		currValues = imgESI.img.slice(volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)),volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)+1));
 		currValues = currValues.filter(function (value) { return !Number.isNaN(value)});
 		currValues.sort((a, b) => b - a)
 	}
-	orderCurrValues();
+	lmbdSlider.oninput();
 	// init environement for topo plot
 	var nv2 = new niivue.Niivue({
     show3Dcrosshair: false,
