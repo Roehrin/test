@@ -114,7 +114,7 @@
 				type="range"
 				min="0"
 				max="4"
-				value="0"
+				value="2"
 				class="slider"
 				id="lmbdSlider"
 			/>
@@ -126,8 +126,8 @@
 	<div class='page-wrapper'>
         <div class='row'>
 		  <div class='column' >
-			  <div style="height:300px">
-              <canvas id="gl_topo">
+			  <div style="height:300px; pointer-events: none">
+              <canvas id="gl_topo" >
 			  </div>
 			  <div id="iedTrace"></div>
 
@@ -150,8 +150,8 @@
 	const lmbdCount = 5;
 	const lmbdValues = [0.00001, 0.001, 0.01, 0.05, 0.1];
 	const timePoints = [0.2, 0.452, 0.48, 0.508, 0.7];
-	var currTimeIdx = 3;
-	var currLambdaIdx = 3;
+	var currTimeIdx = timeSlider.valueAsNumber;
+	var currLambdaIdx = lmbdSlider.valueAsNumber;
 	var currMethod = "eLORETA";
 	var perc20Btn = document.getElementById('prec20Btn');
 	var perc10Btn = document.getElementById('prec10Btn');
@@ -165,7 +165,7 @@
 		opacity: 1
 	},
 	{
-		url: "https://roehrin.github.io/test/IED_source/sub-16_meth-eloreta_0.48s.nii",
+		url: "https://roehrin.github.io/test/IED_source/sub-16_meth-" + currMethod.toLowerCase() + ".nii",
 		colormap: "hot",
 		opacity: .6,
 		visible: true,
@@ -232,7 +232,6 @@
 		layout.shapes[0].x0 = timePoints[currTimeIdx];
 		layout.shapes[0].x1 = timePoints[currTimeIdx];
 		Plotly.redraw('iedTrace');
-		await loadESI()
 		document.getElementById("timeString").innerHTML = timePoints[currTimeIdx] + 's';
 		lmbdSlider.oninput();
 	}
@@ -242,7 +241,7 @@
 		// order currValues - faster for percentage thresholding to store values in descending order
 		currentMax = currValues[0];
 		nv1.volumes[1].cal_max = currentMax;
-		nv1.setFrame4D(nv1.volumes[1].id, currLambdaIdx)
+		nv1.setFrame4D(nv1.volumes[1].id, currLambdaIdx + lmbdCount*(currTimeIdx))
 		// if percThrCheck unchecked simply adjust the max of the colour bar to the max of the current volume
 		if (percThrCheck.checked){
 			// if checked display the P% sources by adjusting the currentMin
@@ -318,7 +317,7 @@
 	async function loadESI() {
 		const curr_crmap = nv1.volumes[1].colormap;
 		nv1.volumes.pop(); //remove current 4D volume
-		let fname = "https://roehrin.github.io/test/IED_source/sub-16_meth-" + currMethod.toLowerCase() + "_" + timePoints[currTimeIdx] +"s.nii";
+		let fname = "https://roehrin.github.io/test/IED_source/sub-16_meth-" + currMethod.toLowerCase() + ".nii";
 		volumeList1[1].url = fname;
 		await nv1.addVolumeFromUrl(volumeList1[1]);
 		imgESI = nv1.volumes[1].valueOf();
@@ -353,8 +352,8 @@
 	nv1.attachTo("gl1")
 	await nv1.loadVolumes(volumeList1)
 	nv1.volumes[0].colorbarVisible = false;
-	document.getElementById("lmbdString").innerHTML = lmbdValues[0];
-	nv1.addLabel("eLORETA", 
+	document.getElementById("lmbdString").innerHTML = lmbdValues[currLambdaIdx];
+	nv1.addLabel(currMethod, 
 		{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
 		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
 	var globalMax = nv1.volumes[1].global_max;
@@ -369,9 +368,9 @@
 		buttons[i].addEventListener("click", onButtonClick, false);
 	}
 	nv1.setRenderAzimuthElevation(-90-45, 0);
-	var currValues = imgESI.img.slice(volSize*(currLambdaIdx),volSize*(currLambdaIdx+1));
+	var currValues = imgESI.img.slice(volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)),volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)+1));
 	function orderCurrValues(){
-		currValues = imgESI.img.slice(volSize*(currLambdaIdx),volSize*(currLambdaIdx+1));
+		currValues = imgESI.img.slice(volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)),volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)+1));
 		currValues = currValues.filter(function (value) { return !Number.isNaN(value)});
 		currValues.sort((a, b) => b - a)
 	}
