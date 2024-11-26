@@ -360,6 +360,7 @@
 	var currentMax = nv1.volumes[1].global_max;
 	var imgESI = nv1.volumes[1].valueOf();
 	var volSize = imgESI.dimsRAS[1]*imgESI.dimsRAS[2]*imgESI.dimsRAS[3]; // element [0] is not the first dimension size, it is 4, as in 4D volume ?!?
+	var maxInd = 0;
 	var currentPerc = Math.round(0.20*volSize);
 	nv1.volumes[1].cal_max = currentMax;
 	nv1.updateGLVolume()
@@ -372,8 +373,12 @@
 	function orderCurrValues(){
 		currValues = imgESI.img.slice(volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)),volSize*(currLambdaIdx+lmbdCount*(currTimeIdx)+1));
 		currValues = currValues.filter(function (value) { return !Number.isNaN(value)});
+		maxInd =  currValues.indexOf(Math.max(...currValues));
+		// sorting is needed to define the % thresholding but is inefficient for finding the max, possible optimisation here
 		currValues.sort((a, b) => b - a)
 	}
+	//function ind2sub(){
+	//}
 	lmbdSlider.oninput();
 	// init environement for topo plot
 	var nv2 = new niivue.Niivue({
@@ -403,6 +408,21 @@
 		  layers: meshLayersList,
 		}
 	]);
+	var eegLayout = {name: "eegLayout",
+		nodeColormap: "warm",
+		nodeColormapNegative: "",
+		nodeMinColor: 0,
+		nodeMaxColor: 1,
+		nodeScale: 1, //scale factor for node, e.g. if 2 and a node has size 3, a 6mm ball is drawn
+		edgeColormap: "",
+		edgeColormapNegative: "",
+		edgeMin: 0,
+		edgeMax: 2.5,
+		edgeScale: 1,
+		legendLineThickness: 0,
+		nodes: [],
+		edges: []
+		};
 	nv2.setMeshShader(nv2.meshes[0].id, "Diffuse");
 	var nElec = 204;
 	var Fs = 250; // known sampling frequency
@@ -414,6 +434,20 @@
 	//nv2.meshes[1].colorbarVisible = false;
 	//nv2.meshes[0].layers[1].colorbarVisible = false;
 	nv2.setRenderAzimuthElevation(0, 90);
+	// convert mesh coordinates to connectome to display the EEG electrodes
+	for (let idNode = 0; idNode<nElec; idNode++){
+		let nodeCoord = nv2.meshes[0].pts.slice(idNode*3,(idNode+1)*3);
+		let newNode = {
+			name: "E"+ idNode,
+			x: nodeCoord[0],
+			y: nodeCoord[1],
+			z: 0,
+			colorValue: 1,
+			sizeValue: 1
+		}
+		eegLayout.nodes.push(newNode)
+	} // populate eegLayout
+	nv2.addMesh(nv2.loadConnectomeAsMesh(eegLayout))
 	// init the plot of the EEG traces
 	function convertTopo2EEG(){
 		let nSamples = topoValues.length/nElec;
