@@ -110,6 +110,8 @@
 	var srcSlider = document.getElementById("srcSlider");
 	var minSlider = document.getElementById("meshMinSlider");
 	var gamSlider = document.getElementById("gammaSlider");
+	var azi = 0;
+	var elev = 0;
 	var volumeList1 = [
 	// first item is background image
 	{
@@ -157,6 +159,7 @@
 		nv1.meshes[0].updateMesh(nv1.gl)
 		currentVol = this.value;
 		nv1.setFrame4D(nv1.volumes[1].id, currentVol)
+		convertEucliCoord2AziElev()
 		updateCrosshairPos();
 	};
 	minSlider.oninput = function () {
@@ -333,7 +336,13 @@
 		buttons[i].addEventListener("click", onButtonClick, false);
 	}
 	updateCrosshairPos()
-	nv1.setRenderAzimuthElevation(-90-45, 0);
+	function convertEucliCoord2AziElev(){
+		let r = Math.sqrt(Math.pow(currSrcPos[0], 2) + Math.pow(currSrcPos[1], 2));
+		azi = -180/Math.PI*Math.atan2(currSrcPos[1], currSrcPos[0]) - 90; // remove 90 because -y and -x used as axis
+		elev = 180/Math.PI*Math.atan2(currSrcPos[2], r)
+		nv1.setRenderAzimuthElevation(azi, elev);
+	}
+	convertEucliCoord2AziElev();
 	
   
  </script>
