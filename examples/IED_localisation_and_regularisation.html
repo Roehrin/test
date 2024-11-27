@@ -129,7 +129,7 @@
 			  <div style="height:300px; pointer-events: none">
               <canvas id="gl_topo" >
 			  </div>
-			  <div id="iedTrace"></div>
+			  <div id="iedTrace" style="height:400px;"></div>
 
 		  </div>
           <div class='column'>
@@ -503,5 +503,6 @@
 		}
 	  }]
 	};
-	Plotly.newPlot('iedTrace', eegData, layout);
+	var config = {responsive: true};
+	Plotly.newPlot('iedTrace', eegData, layout, config);
  </script>
