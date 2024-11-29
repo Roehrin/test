@@ -58,6 +58,7 @@
 			<div class="dropdown-content">
 				<a class="viewBtn dropdown-item-checked" id="_eLORETA">eLORETA</a>
 				<a class="viewBtn dropdown" id="_LCMV">LCMV</a>
+				<a class="viewBtn dropdown" id="_DipoleFit">DipoleFit</a>
 			</div>
 		</div>
 	</div>
@@ -233,6 +234,16 @@
 		layout.shapes[0].x1 = timePoints[currTimeIdx];
 		Plotly.redraw('iedTrace');
 		document.getElementById("timeString").innerHTML = timePoints[currTimeIdx] + 's';
+		if (currMethod === "DipoleFit"){ // no need to change frame4D when "DipoleFit"
+			for (let dipID=0; dipID<lmbdCount; dipID++){
+				nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", dipID === currTimeIdx) ;
+			}
+			let dPos = nv1.mm2frac([nv1.meshes[currTimeIdx].nodes[0].x, nv1.meshes[currTimeIdx].nodes[0].y, nv1.meshes[currTimeIdx].nodes[0].z]); // current position of the source, mm convert to frac
+			nv1.scene.crosshairPos = dPos;
+			nv1.createOnLocationChange()
+			nv1.drawScene()
+			return
+		}
 		lmbdSlider.oninput();
 	}
 	lmbdSlider.oninput = function () {
@@ -307,10 +318,25 @@
 		}
 	  if (event.target.id.charAt(0) === "_") {
 		currMethod = event.target.id.substr(1);
-		//const cal_min = nv1.volumes[1].cal_min;
-		await loadESI()
-		nv1.document.labels[0].text = currMethod;
-		lmbdSlider.oninput()
+		if (currMethod == "DipoleFit"){
+			nv1.setOpacity(1, 0);
+			for (let dipID=0; dipID<lmbdCount; dipID++){
+				nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", dipID === currTimeIdx) ;
+			}
+			let dPos = nv1.mm2frac([nv1.meshes[currTimeIdx].nodes[0].x, nv1.meshes[currTimeIdx].nodes[0].y, nv1.meshes[currTimeIdx].nodes[0].z]); // current position of the source, mm convert to frac
+			nv1.scene.crosshairPos = dPos;
+			nv1.createOnLocationChange()
+			nv1.drawScene()
+		} else {
+			for (let dipID=0; dipID<lmbdCount; dipID++){ // make sure all dipoles are not visible
+				nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", false) ;
+			}
+			//const cal_min = nv1.volumes[1].cal_min;
+			await loadESI()
+			nv1.setOpacity(1, .6);
+			nv1.document.labels[0].text = currMethod;
+			lmbdSlider.oninput()
+			}
 		toggleGroup(event.target.id);
 		}
 	}
@@ -323,19 +349,21 @@
 		imgESI = nv1.volumes[1].valueOf();
 		nv1.volumes[1].colormap = curr_crmap;
 	}
+	// handle nv1: MRI + ESI
 	let opts = {
-	show3Dcrosshair: true,
-	isColorbar: true,
-	//isResizeCanvas: false,
-	backColor: [0, 0, 0, 1],
-	dragAndDropEnabled: false,
-	isNearestInterpolation: true,
-	//sliceType: niivue.SLICE_TYPE.RENDER,
-	multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
-	multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
-	isOrientCube: true,
-	showLegend: false,
-	meshXRay: .3,
+		show3Dcrosshair: true,
+		isColorbar: true,
+		//isResizeCanvas: false,
+		backColor: [0, 0, 0, 1],
+		dragAndDropEnabled: false,
+		isNearestInterpolation: true,
+		//sliceType: niivue.SLICE_TYPE.RENDER,
+		multiplanarLayout: niivue.MULTIPLANAR_TYPE.GRID,
+		multiplanarShowRender: niivue.SHOW_RENDER.ALWAYS,
+		isOrientCube: true,
+		showLegend: false,
+		meshXRay: .3,
+		
 	}
 	reset.onclick = function () {
 		nv1.setDefaults(opts, true)
@@ -352,6 +380,54 @@
 	nv1.attachTo("gl1")
 	await nv1.loadVolumes(volumeList1)
 	nv1.volumes[0].colorbarVisible = false;
+	// preload the dipoles of the dipole fit
+	const R = 15;
+	let response = await fetch("https://roehrin.github.io/test/IED_source/sub-16_meth-dipole_fit.json", {});
+	let dipoleFits = await response.json();
+	let nDipoles = dipoleFits.x.length;
+	for (let dipID=0; dipID<nDipoles; dipID++){
+		let normMom = Math.sqrt(Math.pow(dipoleFits.nx[dipID], 2) + Math.pow(dipoleFits.ny[dipID], 2) + Math.pow(dipoleFits.nz[dipID], 2));
+		var dipole = {
+			name: "Dip" + dipID,
+			nodeColormap: "Violet",
+			nodeColormapNegative: "",
+			nodeMinColor: 0,
+			nodeMaxColor: 1,
+			nodeScale: 1.5,
+			edgeColormap: "Violet",
+			edgeColormapNegative: "",
+			edgeMin: 0,
+			edgeMax: 2.5,
+			edgeScale: 1.5,
+			legendLineThickness: 0,
+			nodes: [
+			  {
+				name: "source",
+				x: dipoleFits.x[dipID],
+				y: dipoleFits.y[dipID],
+				z: dipoleFits.z[dipID],
+				colorValue: 1,
+				sizeValue: 5
+			  },
+			  {
+				name: "target",
+				x: dipoleFits.x[dipID]+R/normMom*dipoleFits.nx[dipID],
+				y: dipoleFits.y[dipID]+R/normMom*dipoleFits.ny[dipID],
+				z: dipoleFits.z[dipID]+R/normMom*dipoleFits.nz[dipID],
+				colorValue: 1,
+				sizeValue: 2.5
+			  }
+			],
+			edges: [{
+			  first: 0,
+			  second: 1,
+			  colorValue: 2.5
+			}]
+		};
+		await nv1.addMesh(nv1.loadConnectomeAsMesh(dipole))
+		nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", false) ;
+		nv1.meshes[dipID].colorbarVisible = false;
+	}// load dipoles
 	document.getElementById("lmbdString").innerHTML = lmbdValues[currLambdaIdx];
 	nv1.addLabel(currMethod, 
 		{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
@@ -377,10 +453,9 @@
 		// sorting is needed to define the % thresholding but is inefficient for finding the max, possible optimisation here
 		currValues.sort((a, b) => b - a)
 	}
-	//function ind2sub(){
-	//}
 	lmbdSlider.oninput();
-	// init environement for topo plot
+	// end handle nv1: MRI + ESI
+	// init environement for topo plot nv2
 	var nv2 = new niivue.Niivue({
     show3Dcrosshair: false,
 	dragAndDropEnabled: false,
@@ -448,6 +523,7 @@
 		eegLayout.nodes.push(newNode)
 	} // populate eegLayout
 	nv2.addMesh(nv2.loadConnectomeAsMesh(eegLayout))
+	// end of init environement for topo plot nv2
 	// init the plot of the EEG traces
 	function convertTopo2EEG(){
 		let nSamples = topoValues.length/nElec;
