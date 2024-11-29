@@ -61,6 +61,18 @@
 				<a class="viewBtn dropdown" id="_DipoleFit">DipoleFit</a>
 			</div>
 		</div>
+		<div class="dropdown">
+			<button class="dropbtn">
+			  About
+			  <i class="fa fa-caret-down"></i>
+			</button>
+			<div class="dropdown-content">
+				<a class="viewBtn dropdown" id="-Authors">Authors</a>
+				<a class="viewBtn dropdown" href="https://github.com/niivue/niivue" target="_blank">Niivue</a>
+				<a class="viewBtn dropdown" href="https://www.fieldtriptoolbox.org/" target="_blank">Fieldtrip</a>
+				<a class="viewBtn dropdown" href="https://plotly.com/javascript/" target="_blank">Plotly</a>
+			</div>
+		</div>
 	</div>
 	<div class="row">
 		<div style="outline: #505050 2px solid; padding: 2px 10px;">
@@ -206,6 +218,34 @@
 			maxSlider.oninput();
 		}
 	}
+	function disablingSliders(disableFlag) {
+		if (disableFlag){
+			// when checked disable min/max sliders  and enable percentage thresholding radio buttons
+			// other wise do the opposite
+			minSlider.disabled = true;
+			maxSlider.disabled = true;
+			perc20Btn.disabled = true;
+			perc10Btn.disabled = true;
+			perc5Btn.disabled = true;
+			perc1Btn.disabled = true;
+			percThrCheck.disabled = true;
+			lmbdSlider.disabled = true;
+		} else {
+			lmbdSlider.disabled = false;			
+			percThrCheck.disabled = false;
+			if (percThrCheck.checked){
+				perc20Btn.disabled = false;
+				perc10Btn.disabled = false;
+				perc5Btn.disabled = false;
+				perc1Btn.disabled = false;
+			} else {
+				minSlider.disabled = false;
+				maxSlider.disabled = false;
+			}
+			
+		}
+		
+	}
 	function applyPercThreshold(){
 		// if checked display the P% sources by adjusting the currentMin
 		nv1.volumes[1].cal_min = Math.min(...currValues.slice(0,currentPerc));
@@ -272,72 +312,74 @@
 		nv1.updateGLVolume();
 	}; 
 	async function onButtonClick(event) {
-	  if (event.target.id.charAt(0) === "|") {
-		  //sliceType
-		  if (event.target.id === "|Axial") nv1.setSliceType(nv1.sliceTypeAxial);
-		  if (event.target.id === "|Coronal")
-			nv1.setSliceType(nv1.sliceTypeCoronal);
-		  if (event.target.id === "|Sagittal")
-			nv1.setSliceType(nv1.sliceTypeSagittal);
-		  if (event.target.id === "|Render") nv1.setSliceType(nv1.sliceTypeRender);
-		  if (event.target.id === "|MultiPlanar") {
-			nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.NEVER;
-			nv1.setSliceType(nv1.sliceTypeMultiplanar);
-		  }
-		  if (event.target.id === "|MultiPlanarRender") {
-			nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
-			nv1.setSliceType(nv1.sliceTypeMultiplanar);
-		  }
-		  toggleGroup(event.target.id);
-	  } //sliceType
-	  if (event.target.id === "Colorbar") {
+		if (event.target.id.charAt(0) === "|") {
+			//sliceType
+			if (event.target.id === "|Axial") nv1.setSliceType(nv1.sliceTypeAxial);
+			if (event.target.id === "|Coronal")
+				nv1.setSliceType(nv1.sliceTypeCoronal);
+			if (event.target.id === "|Sagittal")
+				nv1.setSliceType(nv1.sliceTypeSagittal);
+			if (event.target.id === "|Render") nv1.setSliceType(nv1.sliceTypeRender);
+			if (event.target.id === "|MultiPlanar") {
+				nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.NEVER;
+				nv1.setSliceType(nv1.sliceTypeMultiplanar);
+			}
+			if (event.target.id === "|MultiPlanarRender") {
+				nv1.opts.multiplanarShowRender = niivue.SHOW_RENDER.ALWAYS;
+				nv1.setSliceType(nv1.sliceTypeMultiplanar);
+			}
+			toggleGroup(event.target.id);
+		} //sliceType
+		else if (event.target.id === "Colorbar") {
 		  nv1.opts.isColorbar = !nv1.opts.isColorbar;
 		  event.srcElement.classList.toggle("dropdown-item-checked");
 		  nv1.drawScene();
-		  return;
 		}
-	  if (event.target.id === "Radiological") {
+		else if (event.target.id === "Radiological") {
 		  nv1.opts.isRadiologicalConvention = !nv1.opts.isRadiologicalConvention;
 		  event.srcElement.classList.toggle("dropdown-item-checked");
 		  nv1.drawScene();
-		  return;
 		}
-	  if (event.target.id === "ClipPlane") {
+		else if (event.target.id === "ClipPlane") {
 		  if (nv1.scene.clipPlaneDepthAziElev[0] > 1)
 			nv1.setClipPlane([0.3, 270, 0]);
 		  else nv1.setClipPlane([2, 270, 0]);
 		  nv1.drawScene();
-		  return;
 		}
-	  if (event.target.id.charAt(0) === "!") {
+		else if (event.target.id.charAt(0) === "!") {
 		  // set color scheme
 		  nv1.volumes[1].colormap = event.target.id.substr(1);
 		  lmbdSlider.oninput()
 		  toggleGroup(event.target.id);
-		  return;
 		}
-	  if (event.target.id.charAt(0) === "_") {
-		currMethod = event.target.id.substr(1);
-		if (currMethod == "DipoleFit"){
-			nv1.setOpacity(1, 0);
-			for (let dipID=0; dipID<lmbdCount; dipID++){
-				nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", dipID === currTimeIdx) ;
+		else if (event.target.id.charAt(0) === "_") {
+			currMethod = event.target.id.substr(1);
+			if (currMethod == "DipoleFit"){
+				nv1.setOpacity(1, 0);
+				disablingSliders(true); 
+				for (let dipID=0; dipID<lmbdCount; dipID++){
+					nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", dipID === currTimeIdx) ;
+				}
+				let dPos = nv1.mm2frac([nv1.meshes[currTimeIdx].nodes[0].x, nv1.meshes[currTimeIdx].nodes[0].y, nv1.meshes[currTimeIdx].nodes[0].z]); // current position of the source, mm convert to frac
+				nv1.scene.crosshairPos = dPos;
+				nv1.createOnLocationChange()
+				nv1.drawScene()
+			} else {
+				for (let dipID=0; dipID<lmbdCount; dipID++){ // make sure all dipoles are not visible
+					nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", false) ;
+				}
+				if (percThrCheck.disabled) disablingSliders(false); // if percThrCheck.disable it means dipole fit was displayed otherwise do not bother(false);
+				//const cal_min = nv1.volumes[1].cal_min;
+				await loadESI()
+				nv1.setOpacity(1, .6);
+				nv1.document.labels[0].text = currMethod;
+				lmbdSlider.oninput()
 			}
-			let dPos = nv1.mm2frac([nv1.meshes[currTimeIdx].nodes[0].x, nv1.meshes[currTimeIdx].nodes[0].y, nv1.meshes[currTimeIdx].nodes[0].z]); // current position of the source, mm convert to frac
-			nv1.scene.crosshairPos = dPos;
-			nv1.createOnLocationChange()
-			nv1.drawScene()
-		} else {
-			for (let dipID=0; dipID<lmbdCount; dipID++){ // make sure all dipoles are not visible
-				nv1.setMeshProperty(nv1.meshes[dipID].id, "visible", false) ;
+			toggleGroup(event.target.id);
+		} else if (event.target.id.charAt(0) === "-") {
+			if (event.target.id.substr(1) == "Authors"){
+				alert("For this page, Dr Isotta Rigoni processed the data with Fieldtrip.\nThe webpage was written by Dr Nicolas Roehri, using Niivue and Plotly.");
 			}
-			//const cal_min = nv1.volumes[1].cal_min;
-			await loadESI()
-			nv1.setOpacity(1, .6);
-			nv1.document.labels[0].text = currMethod;
-			lmbdSlider.oninput()
-			}
-		toggleGroup(event.target.id);
 		}
 	}
 	async function loadESI() {
