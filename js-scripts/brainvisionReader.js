@@ -3,7 +3,6 @@ export async function readBrainvisionEEGData(url) {
     const sampleSize = 4; // 4 bytes for a 32-bit float
     const numberOfChannels = 204; // Equivalent to hdr.NumberOfChannels in MATLAB
     const calib = 1; // Calibration factor
-    let data = [];
 
     try {
         // Fetch the file from the URL
@@ -15,21 +14,27 @@ export async function readBrainvisionEEGData(url) {
         // Get the file as an ArrayBuffer
         const arrayBuffer = await response.arrayBuffer();
         const nSamples = arrayBuffer.byteLength / sampleSize/numberOfChannels;
-
+		
+		// create time vector
+		let timeVec = Array.from({length: nSamples}, (_, i) => (i + 1)/Fs);
         // Create a DataView for reading binary data
         const dataView = new DataView(arrayBuffer);
-
-        // Iterate through the data to extract samples
-        for (let i = 0; i < nSamples; i++) {
-            const sample = [];
-            for (let j = 0; j < numberOfChannels; j++) {
-                const offset = (i * numberOfChannels + j) * sampleSize;
+		
+		// write the data so they can be directly used by plot.ly
+		// init data by pre-allocating ys as vector of zeros
+		let data = [];
+		// important because data are multiplex
+		for (let i = 0; i < numberOfChannels; i++) {
+			let dummyLine = {x:timeVec, y:Array(nSamples).fill(0), mode: "lines", line: {color: 'rgb(0,0,0)'}}; 
+			data.push(dummyLine);
+		}
+		for (let sampId = 0; sampId < nSamples; sampId++) {
+			for (let elId = 0; elId < numberOfChannels; elId++) {
+				const offset = (sampId * numberOfChannels + elId) * sampleSize;
                 const value = dataView.getFloat32(offset, true); // true for little-endian
-                sample.push(value * calib); // Apply calibration
-            }
-            data.push(sample);
-        }
-
+				data[elId].y[sampId] = value;
+			}
+		}
         console.log("EEG Data:", data); // The resulting 2D array
 		return data
     } catch (error) {
