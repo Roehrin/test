@@ -6,6 +6,7 @@ export async function readBrainvisionEEGData(url, hdr) {
 			throw new Error(`Only IEEE_FLOAT_32 is implemented.`);
 		}
 		const numberOfChannels = hdr["Common Infos"]["NumberOfChannels"];
+		const Fs = 1e6 / hdr["Common Infos"]["SamplingInterval"];
 		const chanInfos = hdr["Channel Infos"];
 		const calib = 1; // Calibration factor
 
