@@ -99,7 +99,7 @@ export async function readVHDRfromURL(url) {
         throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
     const fileContent = await response.text();
-	return  parseBrainVisionHeader(headerText);
+	return  parseBrainVisionHeader(fileContent);
 }
 
 export async function readVHDRfromFile(file) {
