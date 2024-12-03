@@ -81,7 +81,7 @@ function parseBrainVisionHeader(headerText) {
 				const elements = value.split(',');
 				let channelInf = {};
 				for (let i = 0; i < elements.length; i++){
-					channelInf[channelInfos[i]] = elements[i]
+					channelInf[channelInfos[i]] = elements[i];
 				}
 				header[currentSection][key] = channelInf;
 			} else{
@@ -93,7 +93,7 @@ function parseBrainVisionHeader(headerText) {
 	return header;
 }
 
-export async function readVHDRfromURL(URL) {
+export async function readVHDRfromURL(url) {
 	const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to fetch file: ${response.statusText}`);
