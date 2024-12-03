@@ -1,10 +1,16 @@
 // brainVisionReader.js
-export async function readBrainvisionEEGData(url) {
-    const sampleSize = 4; // 4 bytes for a 32-bit float
-    const numberOfChannels = 204; // Equivalent to hdr.NumberOfChannels in MATLAB
-    const calib = 1; // Calibration factor
+export async function readBrainvisionEEGData(url, hdr) {
+	try {
+		if (hdr["Binary Infos"]["BinaryFormat"] === "IEEE_FLOAT_32"){
+			const sampleSize = 4; // 4 bytes for a 32-bit float
+		} else { 
+			throw new Error(`Only IEEE_FLOAT_32 is implemented.`);
+		}
+		const numberOfChannels = hdr["Common Infos"]["NumberOfChannels"];
+		const chanInfos = hdr["Channel Infos"];
+		const calib = 1; // Calibration factor
 
-    try {
+    
         // Fetch the file from the URL
         const response = await fetch(url);
         if (!response.ok) {
@@ -13,7 +19,7 @@ export async function readBrainvisionEEGData(url) {
 
         // Get the file as an ArrayBuffer
         const arrayBuffer = await response.arrayBuffer();
-        const nSamples = arrayBuffer.byteLength / sampleSize/numberOfChannels;
+        const nSamples = arrayBuffer.byteLength / sampleSize / numberOfChannels;
 		
 		// create time vector
 		let timeVec = Array.from({length: nSamples}, (_, i) => (i + 1)/Fs);
@@ -25,7 +31,7 @@ export async function readBrainvisionEEGData(url) {
 		let data = [];
 		// important because data are multiplex
 		for (let i = 0; i < numberOfChannels; i++) {
-			let dummyLine = {x:timeVec, y:Array(nSamples).fill(0), mode: "lines", line: {color: 'rgb(0,0,0)'}}; 
+			let dummyLine = {x:timeVec, y:Array(nSamples).fill(0), name:chanInfos["Ch"+(i+1)].label, mode: "lines", line: {color: 'rgb(0,0,0)'}}; 
 			data.push(dummyLine);
 		}
 		for (let sampId = 0; sampId < nSamples; sampId++) {
@@ -35,13 +41,83 @@ export async function readBrainvisionEEGData(url) {
 				data[elId].y[sampId] = value;
 			}
 		}
-        console.log("EEG Data:", data); // The resulting 2D array
+        console.log("EEG Data Loaded");
 		return data
     } catch (error) {
         console.error("Error reading EEG file:", error);
 		return null; // Return null in case of an error
     }
 }
+// Function to parse Brain Vision Header File when read as text
+function parseBrainVisionHeader(headerText) {
+	const header = {};
 
-export async function readBrainvisionEEGHeader(url) {
+	// Split the file content into lines
+	const lines = headerText.split(/\r?\n/);
+
+	let currentSection = null;
+	let channelInfos = ['label', 'refChannel', 'resolution', 'unit'];
+	for (let line of lines) {
+		// Trim the line to remove leading/trailing whitespace
+		line = line.trim();
+
+		// Skip empty lines or comments
+		if (line === '' || line.startsWith(';')) {
+			continue;
+		}
+
+		// Check for section headers (e.g., [Common Infos])
+		const sectionMatch = line.match(/^\[(.+)\]$/);
+		if (sectionMatch) {
+			currentSection = sectionMatch[1];
+			header[currentSection] = {}; // Initialize section as an object
+			continue;
+		}
+
+		// Parse key-value pairs within a section
+		if (currentSection && line.includes('=')) {
+			const [key, value] = line.split('=').map(part => part.trim());
+			if (currentSection === "Channel Infos"){
+				const elements = value.split(',');
+				let channelInf = {};
+				for (let i = 0; i < elements.length; i++){
+					channelInf[channelInfos[i]] = elements[i]
+				}
+				header[currentSection][key] = channelInf;
+			} else{
+				header[currentSection][key] = value;
+			}
+		}
+	}
+
+	return header;
+}
+
+export async function readVHDRfromURL(URL) {
+	const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+    }
+    const fileContent = await response.text();
+	return  parseBrainVisionHeader(headerText);
+}
+
+export async function readVHDRfromFile(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+
+		reader.onload = function(e) {
+			try {
+				const fileContent = e.target.result;
+				const parsedHeader = parseBrainVisionHeader(fileContent);
+				resolve(parsedHeader); // Resolve the parsed data
+			} catch (error) {
+				reject(error); // Handle parsing errors
+			}
+		};
+		reader.onerror = function(e) {
+			reject(new Error("Error reading file")); // Handle file read errors
+		};
+		reader.readAsText(file);
+	});
 }
