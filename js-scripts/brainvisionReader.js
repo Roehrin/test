@@ -1,9 +1,8 @@
 // brainVisionReader.js
 export async function readBrainvisionEEGData(url, hdr) {
 	try {
-		if (hdr["Binary Infos"]["BinaryFormat"] === "IEEE_FLOAT_32"){
-			const sampleSize = 4; // 4 bytes for a 32-bit float
-		} else { 
+		const sampleSize = 4; // 4 bytes for a 32-bit float
+		if (hdr["Binary Infos"]["BinaryFormat"] !== "IEEE_FLOAT_32"){
 			throw new Error(`Only IEEE_FLOAT_32 is implemented.`);
 		}
 		const numberOfChannels = hdr["Common Infos"]["NumberOfChannels"];
