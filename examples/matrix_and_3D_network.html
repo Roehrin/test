@@ -12,7 +12,7 @@
     <noscript>niivue requires JavaScript.</noscript>
     <header>
 	<h3>Investigate the structural connectome</h3>
-	<div class="dropdown">
+	<div class="dropdown" id='dropDownMenu'>
 		<button class="dropbtn" data-toggle="dropdown">
 		  View
 		  <i class="fa fa-caret-down"></i>
@@ -35,9 +35,9 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="!EdPlasma">Plasma</a>
+          <a class="viewBtn" id="!EdPlasma">Plasma</a>
           <a class="viewBtn" id="!EdViridis">Viridis</a>
-          <a class="viewBtn" id="!EdInferno">Inferno</a>
+          <a class="viewBtn dropdown-item-checked" id="!EdInferno">Inferno</a>
 		  <a class="viewBtn" id="!EdRandom">Random</a>
         </div>
     </div>
@@ -67,6 +67,18 @@
           <a class="viewBtn" id="_SClogNE">log fiber count and nodal eff</a> 
         </div>
     </div>
+	<div class="dropdown">
+			<button class="dropbtn">
+			  About
+			  <i class="fa fa-caret-down"></i>
+			</button>
+			<div class="dropdown-content">
+				<a class="viewBtn dropdown" id="-Help">Help</a>
+				<a class="viewBtn dropdown" id="-Authors">Authors</a>
+				<a class="viewBtn dropdown" href="https://github.com/niivue/niivue" target="_blank">Niivue</a>
+				<a class="viewBtn dropdown" href="https://plotly.com/javascript/" target="_blank">Plotly</a>
+			</div>
+		</div>
   </header>
 		<div class="page-wrapper">
 			<div class="row">
@@ -206,13 +218,27 @@
 		  await nv1.loadConnectomeFromUrl(fname);
 		  nv1.document.labels[0].text = "edge: " + lbl1 + ",\n node: " + lbl2;
 		  nv1.meshes[0].edgeColormapNegative = '';
-		  nv1.origConnectome = nv1.meshes[0].connectome;
 		  data.pop()
 		  data[0] = convertConn2Heatmap()[0];
 		  updateMeshes()
-		  EdThreshSlider.oninput(),
 		  toggleGroup(event.target.id);
-		}
+		  matrixDiv.layout.yaxis.autorange = true;
+		  matrixDiv.layout.xaxis.autorange = true;
+		  matrixDiv.layout.xaxis.dtick = 0;
+		  matrixDiv.layout.xaxis.tickmode = "auto";
+		  clickMode = 0;
+		  EdThreshSlider.oninput()
+		} else if (event.target.id.charAt(0) === "-") {
+			if (event.target.id.substr(1) == "Help"){
+				alert("Naviguate the structural connectome.\nHover on the matrix will highlight the region (or node) on the y axis.\n\n" + 
+				"One click will show this region on the MRI.\nA second on the same region will show only the neighbourhood of this region.\n" + 
+				"Another click will reset the view.\n\n" + 
+				"The edge and node size sliders allow you to change the size of the nodes and edges of the graph displayed on the MRI.\n" + 
+				"The edge and node threshold sliders allow you to set a threshold below which the node or edges are not displayed (on the MRI and matrix).\n");
+			} else if (event.target.id.substr(1) == "Authors"){
+				alert("The webpage was written by Dr Nicolas Roehri, using Niivue and Plotly.");
+			}
+		}	
   }
   // Update the current slider value (each time you drag the slider handle)
   edgeSlider.oninput = function () {
@@ -259,10 +285,10 @@
   await nv1.loadConnectomeFromUrl(fname);
   //   indexNearestXYZmm(Xmm: number, Ymm: number, Zmm: number): number[]  could be of interest
   // nv1.getAllLabels()
-  var EdColormap = "Plasma";
+  var EdColormap = "Inferno";
   var NdColormap = "Plasma";
-  nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", EdColormap)
-  nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", NdColormap)
+  nv1.setMeshProperty(nv1.meshes[0].id, "nodeColormap", NdColormap)
+  nv1.setMeshProperty(nv1.meshes[0].id, "edgeColormap", EdColormap)
   nv1.meshes[0].edgeColormapNegative = '';
   nv1.setClipPlane([-0.0, 0, 40]);
   nv1.volumes[0].colorbarVisible = false;
@@ -280,28 +306,6 @@
 		{ textScale: 1.0, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2] }, 
 		[nodes[0].x, nodes[0].y, nodes[0].z], niivue.LabelAnchorPoint.TOPLEFT);
   nv1.updateGLVolume()
-  let rhROI_btns = document.getElementById("rhROI_btns");
-  let lhROI_btns = document.getElementById("lhROI_btns");
-  for (let i = 0; i < nodes.length; i++) {
-	let btn = document.createElement("button");
-		btn.innerHTML = nodes[i].name;
-		btn.onclick = function () {
-			// position crosshair at the center of the ROI
-			let dPos = [nodes[i].x, nodes[i].y, nodes[i].z];
-			dPos = nv1.volumes[0].mm2vox(dPos);
-			const xhPos = nv1.frac2vox(nv1.scene.crosshairPos).slice(0, 3)
-			console.log(xhPos)
-			for (let j = 0; j < dPos.length; j++){
-			  dPos[j] = dPos[j] - xhPos[j];
-			}
-			nv1.moveCrosshairInVox(dPos[0], dPos[1], dPos[2])
-			// if node neighbourhood selected, then only display the connection sto this node
-			if (document.getElementById('showNeigh').checked){
-				showNeighbourhood(i)
-			}
-		};
-  }
-  //lhROI_btns.childNodes[btnIdx].style.backgroundColor = ""
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
 	buttons[i].addEventListener("click", onButtonClick, false);
@@ -366,6 +370,29 @@
 		  automargin: true,
 		  autorange: 'reversed'
 	  },
+	  shapes: [{
+		type: 'line',
+		x0: 118/2+.5-1,
+		y0: 0-.5,
+		x1: 118/2+.5-1,
+		y1: 118-1+.5,
+		line: {
+		  color: 'white',
+		  width: 2,
+		  dash: 'dot'
+		}},
+		{
+		type: 'line',
+		y0: 118/2+.5-1,
+		x0: 0-.5,
+		y1: 118/2+.5-1,
+		x1: 118-1+.5,
+		line: {
+		  color: 'white',
+		  width: 2,
+		  dash: 'dot'
+		}
+	  }]
 	};
 	Plotly.newPlot('matrixDiv', data, layout, {responsive: true});
 	matrixDiv.on('plotly_hover', function(data){
