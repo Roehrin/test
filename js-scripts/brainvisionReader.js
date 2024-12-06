@@ -1,5 +1,5 @@
 // brainVisionReader.js
-export async function readBrainvisionEEGData(url, hdr) {
+export async function readBrainvisionEEGData(url, hdr, scaling = 1, doOffset = false) {
 	try {
 		const sampleSize = 4; // 4 bytes for a 32-bit float
 		if (hdr["Binary Infos"]["BinaryFormat"] !== "IEEE_FLOAT_32"){
@@ -25,7 +25,6 @@ export async function readBrainvisionEEGData(url, hdr) {
 		let timeVec = Array.from({length: nSamples}, (_, i) => (i + 1)/Fs);
         // Create a DataView for reading binary data
         const dataView = new DataView(arrayBuffer);
-		
 		// write the data so they can be directly used by plot.ly
 		// init data by pre-allocating ys as vector of zeros
 		let data = [];
@@ -38,7 +37,7 @@ export async function readBrainvisionEEGData(url, hdr) {
 			for (let elId = 0; elId < numberOfChannels; elId++) {
 				const offset = (sampId * numberOfChannels + elId) * sampleSize;
                 const value = dataView.getFloat32(offset, true); // true for little-endian
-				data[elId].y[sampId] = value;
+				data[elId].y[sampId] = scaling*value + doOffset*elId;
 			}
 		}
         console.log("EEG Data Loaded");
