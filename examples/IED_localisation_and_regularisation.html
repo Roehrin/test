@@ -156,12 +156,7 @@
 <script type="module" async>
 
 	import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
-	import * as vhdrReader from 'https://roehrin.github.io/test/js-scripts/brainvisionReader.js';
-	
-	const fileUrl = "https://roehrin.github.io/test/IED_source/sub-16_ses-preop_task-ied_AVG_desc-cleaned_eeg.eeg"; // Replace with your file URL
-	const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
-    const data = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr);
-	
+		
 	var lmbdSlider = document.getElementById("lmbdSlider");
 	var minSlider = document.getElementById("MinSlider");
 	var maxSlider = document.getElementById("MaxSlider");
