@@ -59,6 +59,7 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
+			<a class="viewBtn" id="_Pow">Power</a> 
           <a class="viewBtn dropdown-item-checked" id="_PLV">PLV</a> 
           <a class="viewBtn" id="_coh">coherence</a> 
 		  <a class="viewBtn" id="_env">envelope correlation</a> 
@@ -84,6 +85,7 @@
         </button>
         <div class="dropdown-content">
           <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
+		  <a class="viewBtn" id="?CC">clustering coef.</a>
         </div>
     </div>
 	<div class="dropdown">
@@ -183,22 +185,6 @@
 		  toggleGroup(event.target.id);
 		  return;
 		}
-	  if (event.target.id.charAt(0) === "_") {
-			// turn off current heatmap
-			Plotly.restyle(seizureTraces, {'opacity': 0, 'showscale':false}, currConn*freqList.length + currFreqId);
-			currConn = ["_PLV", "_coh", "_env"].indexOf(event.target.id);
-			Plotly.restyle(seizureTraces, {'opacity': 1, 'showscale':true}, currConn*freqList.length + currFreqId);
-			toggleGroup(event.target.id);
-			return
-		}
-	  if (event.target.id.charAt(0) === "+") {
-			// turn off current heatmap
-			Plotly.restyle(seizureTraces, {'opacity': 0, 'showscale':false}, currConn*freqList.length + currFreqId);
-			currFreqId = freqList.indexOf(event.target.id.substr(1));
-			Plotly.restyle(seizureTraces, {'opacity': 1, 'showscale':true}, currConn*freqList.length + currFreqId);
-			toggleGroup(event.target.id);
-			return
-		}
 	  if (event.target.id.charAt(0) === "-") {
 			if (event.target.id.substr(1) == "Help"){
 				alert("Naviguate the structural connectome.\nHover on the matrix will highlight the region (or node) on the y axis.\n\n" + 
@@ -209,57 +195,69 @@
 			} else if (event.target.id.substr(1) == "Authors"){
 				alert("The data were curated and selected by Dr Stanislas Lagarde.\nThe data were processed by Dr Nicolas Roehri, using Fieldtrip.\nThe webpage was written by Dr Nicolas Roehri, using Niivue and Plotly.");
 			}
-		}	
+			return
+		}
+		
+	if (event.target.id.charAt(0) === "_") {
+			currConn = ["_Pow", "_PLV", "_coh", "_env"].indexOf(event.target.id);
+			await loadConnMaP()
+			Plotly.redraw('seizureTraces');
+			toggleGroup(event.target.id);
+		}
+	  if (event.target.id.charAt(0) === "?") {
+			currMetric = ["?strength", "?CC"].indexOf(event.target.id);
+			await loadConnMaP()
+			Plotly.redraw('seizureTraces');
+			toggleGroup(event.target.id);
+		}
+	  if (event.target.id.charAt(0) === "+") {
+			// turn off current heatmap
+			currFreqId = freqList.indexOf(event.target.id.substr(1));
+			await loadConnMaP()
+			Plotly.redraw('seizureTraces');
+			toggleGroup(event.target.id);
+		}
+	  let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
+	  let measStr = ['strength', 'CC'];
+	  let meas = measStr[currMetric];
+	  if (currConn == 0){ meas = 'power';}
+	  nv1.document.labels[0].text = connStr[currConn] + ": " + meas + ", " + freqList[currFreqId];
+	  //nv1.updateGLVolume();
+	  nv1.drawScene()
   }
 	
-  const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1.eeg";
+  const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1ds.eeg";
   const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
   const iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-  var PLV = [];
-  var coh = [];
-  var envCorr = [];
+  var connMap = [];
   var currFreqId = 0;
-  var currConn = 0;
+  var currConn = 1
+  var currMetric = 0;
   var EdColormap = "Inferno";
   var NdColormap = "Plasma";
   
-  for (let idFreq = 0; idFreq < freqList.length; idFreq++){
-		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[idFreq] + ".json", {})
+  async function loadConnMaP(){
+		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
 		let connectivity = await response.json()
-		let currPLV = {
-			x: connectivity.PLV.t,
-			z: connectivity.PLV.strength,
+		let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
+		let measStr = ['strength', 'CC'];
+		let meas = measStr[currMetric];
+		if (currConn == 0){ meas = "pow";}
+		let currMap = {
+			x: connectivity[connStr[currConn]].t,
+			z: connectivity[connStr[currConn]][meas],
 			type: 'heatmap',
 			colorscale: 'YlOrRd',
 			zmin:0,
-			opacity:0,
-			showscale: false,
+			opacity:1,
+			showscale: true,
 		};
-		PLV.push(currPLV)
-		let currcoh = {
-			x: connectivity.coh.t,
-			z: connectivity.coh.strength,
-			type: 'heatmap',
-			colorscale: 'YlOrRd',
-			showscale: false,
-			zmin:0,
-			opacity:0,
-		};
-		coh.push(currcoh)
-		let currEnvCorr = {
-			x: connectivity.envCorr.t,
-			z: connectivity.envCorr.strength,
-			type: 'heatmap',
-			colorscale: 'YlOrRd',
-			zmin:0,
-			opacity:0,
-			showscale: false,
-		};
-		envCorr.push(currEnvCorr)
+		connMap[0]  = currMap;
   }
   
-  PLV.push(...coh, ...envCorr, ...iEEGdata)
+  await loadConnMaP()
+  connMap.push(...iEEGdata)
   var layout = {
       hovermode:'closest',
 	  xaxis: {
@@ -286,7 +284,7 @@
 	  showlegend: false
 	};
 	var config = {responsive: true};
-	Plotly.newPlot('seizureTraces', PLV, layout, config);
+	Plotly.newPlot('seizureTraces', connMap, layout, config);
 	// update line width to 1
 	Plotly.restyle(seizureTraces, {'line.width': 1});
 	// too slow
@@ -321,6 +319,9 @@
   }
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");
+  nv1.addLabel("PLV: strength,\n" + freqList[currFreqId], 
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+		undefined, niivue.LabelAnchorPoint.TOPLEFT);
   await nv1.loadVolumes(volumeList1);
   nv1.setClipPlane([-0.0, 0, 40]);
   //thickness of slab. Value 0..1.73 (cube opposite corner length is sqrt(3)).
@@ -332,7 +333,7 @@
   nv1.opts.showLegend = false;
   nv1.meshes[0].edgeColormapNegative = '';
   nv1.updateGLVolume()
-  Plotly.restyle(seizureTraces, {'opacity': 1, 'showscale':true}, 0);
+  //Plotly.restyle(seizureTraces, {'opacity': 1, 'showscale':true}, 0);
   
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
