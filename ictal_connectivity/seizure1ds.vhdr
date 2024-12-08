@@ -7,7 +7,7 @@ MarkerFile=seizure1ds.vmrk
 DataFormat=BINARY
 DataOrientation=MULTIPLEXED
 NumberOfChannels=154
-SamplingInterval=1.953125e+03
+SamplingInterval=3.906250e+03
 
 [Binary Infos]
 BinaryFormat=IEEE_FLOAT_32
