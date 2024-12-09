@@ -116,12 +116,14 @@
   <footer>
 	<label for="edgeSlider">Edge Size</label>
     <input type="range" min="0" max="100" value="30" class="slider" id="edgeSlider" />
-	<label for="EdThreshSlider">Edge Threshold</label>
-    <input type="range" min="0" max="99" value="0" class="slider" id="EdThreshSlider" />
+	<label for="minEdThreshSlider">Min Edge Threshold</label>
+    <input type="range" min="0" max="99" value="50" class="slider" id="minEdThreshSlider" />
+	<label for="maxEdThreshSlider">Max Edge Threshold</label>
+    <input type="range" min="1" max="100" value="100" class="slider" id="maxEdThreshSlider" />
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
-    <label for="NdThreshSlider">Node Threshold</label>
-    <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
+	<label for="timeSlider">Network Time point</label>
+    <input type="range" min="0" max="5" value="3" class="slider" id="timeSlider" />
     <button id="reset">reset</button>
   </footer>
   </body>
@@ -202,6 +204,13 @@
 			currConn = ["_Pow", "_PLV", "_coh", "_env"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			bipElec.edges = edges;
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			edges.sort((a, b) => b - a)
+			minEdThreshSlider.oninput();
+			maxEdThreshSlider.oninput();
+			edgeSlider.oninput();
 			toggleGroup(event.target.id);
 		}
 	  if (event.target.id.charAt(0) === "?") {
@@ -215,6 +224,13 @@
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			bipElec.edges = edges;
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			edges.sort((a, b) => b - a)
+			minEdThreshSlider.oninput();
+			maxEdThreshSlider.oninput();
+			edgeSlider.oninput();
 			toggleGroup(event.target.id);
 		}
 	  let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
@@ -225,15 +241,31 @@
 	  //nv1.updateGLVolume();
 	  nv1.drawScene()
   }
-	
+  
+  edgeSlider.oninput = function () {
+    nv1.setMeshProperty(nv1.meshes[1].id, "edgeScale", this.value*.1)
+  }
+  nodeSlider.oninput = function () {
+    nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
+  }
+  minEdThreshSlider.oninput = function () {
+    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMin", this.value*.01*edges[0]);
+  }
+  maxEdThreshSlider.oninput = function () {
+    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", this.value*.01*edges[0]);
+  }
+  
   const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1ds.eeg";
   const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
   const iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-  var connMap = [];
-  var currFreqId = 0;
-  var currConn = 1
-  var currMetric = 0;
+  const timeSample = [10, 14.5, 17.5, 20, 25, 30];
+  var connMap = []; // variable with the current heatmap
+  var currFreqId = 0; // variable with the current frequency index (linked to freqList)
+  var currConn = 1; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
+  var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff.])
+  var currWindow = 3; // variable with the current time window of the connectivity graph (3D)
+  var edges = []; // variable with the current connectivity graph (3D)
   var EdColormap = "Inferno";
   var NdColormap = "Plasma";
   
@@ -243,7 +275,7 @@
 		let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
 		let measStr = ['strength', 'CC'];
 		let meas = measStr[currMetric];
-		if (currConn == 0){ meas = "pow";}
+		if (currConn == 0){meas = "pow";}
 		let currMap = {
 			x: connectivity[connStr[currConn]].t,
 			z: connectivity[connStr[currConn]][meas],
@@ -254,7 +286,20 @@
 			showscale: true,
 		};
 		connMap[0]  = currMap;
+		edges = connectivity[connStr[currConn]].mat[currWindow];
   }
+  
+  function centerCrosshairOnNode(nodeID){
+		let nodes = nv1.meshes[1].nodes;
+		// position crosshair at the center of the ROI
+		let dPos = [nodes[nodeID].x, nodes[nodeID].y, nodes[nodeID].z];
+		dPos = nv1.volumes[0].mm2vox(dPos);
+		const xhPos = nv1.frac2vox(nv1.scene.crosshairPos).slice(0, 3)
+		for (let j = 0; j < dPos.length; j++){
+		  dPos[j] = dPos[j] - xhPos[j];
+		};
+		nv1.moveCrosshairInVox(dPos[0], dPos[1], dPos[2]);
+	}
   
   await loadConnMaP()
   connMap.push(...iEEGdata)
@@ -287,6 +332,12 @@
 	Plotly.newPlot('seizureTraces', connMap, layout, config);
 	// update line width to 1
 	Plotly.restyle(seizureTraces, {'line.width': 1});
+	
+	seizureTraces.on('plotly_click', function(data){
+		let nodeID = data.points[0].curveNumber-1; // 0 is the heatmap, hence -1
+		centerCrosshairOnNode(nodeID);
+	});
+	
 	// too slow
 	//seizureTraces.on('plotly_hover', function(data){
 	//	let chnID = data.points[0].curveNumber;
@@ -335,15 +386,20 @@
     {
       url: "https://roehrin.github.io/test/ictal_connectivity/pat_elec.jcon",
     },
-	{
-      url: "https://roehrin.github.io/test/ictal_connectivity/pat_bipelec.jcon",
-    },
   ]);
+  nv1.meshes[0].colorbarVisible = false;
   nv1.opts.showLegend = false;
-  nv1.meshes[0].edgeColormapNegative = '';
-  nv1.meshes[1].edgeColormapNegative = '';
-  nv1.updateGLVolume()
-  //Plotly.restyle(seizureTraces, {'opacity': 1, 'showscale':true}, 0);
+  const response = await fetch("https://roehrin.github.io/test/ictal_connectivity/pat_bipelec.jcon", {})
+  const bipElec = await response.json()
+  bipElec.edges = edges;
+  bipElec.edgeMin = .5;
+  bipElec.edgeMax = 1;
+  bipElec.edgeColormap = EdColormap;
+  bipElec.edgeColormapNegative = '';
+  nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+  edges.sort((a, b) => b - a)
+  minEdThreshSlider.oninput();
+  maxEdThreshSlider.oninput();
   
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
