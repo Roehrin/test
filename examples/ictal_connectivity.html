@@ -11,7 +11,7 @@
   <body>
     <noscript>niivue requires JavaScript.</noscript>
     <header>
-	<h3>Connectivity during seizure recorded by iEEG.</h3>
+	<h3>Connectivity during a seizure recorded by iEEG.</h3>
 	<div class="dropdown" id='dropDownMenu'>
 		<button class="dropbtn" data-toggle="dropdown">
 		  View
@@ -43,14 +43,15 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
-          Node Color
+          Map Color
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="!NdPlasma">Plasma</a>
-          <a class="viewBtn" id="!NdViridis">Viridis</a>
-          <a class="viewBtn" id="!NdInferno">Inferno</a>
-		  <a class="viewBtn" id="!NdRandom">Random</a>
+          <a class="viewBtn dropdown-item-checked" id="!MapYlOrRd">YlOrRd</a>
+          <a class="viewBtn" id="!MapYlGnBu">YlGnBu</a>
+          <a class="viewBtn" id="!MapGreens">Greens</a>
+		  <a class="viewBtn" id="!MapReds">Reds</a>
+		  <a class="viewBtn" id="!MapBlues">Blues</a>
         </div>
     </div>
 	<div class="dropdown">
@@ -116,10 +117,8 @@
   <footer>
 	<label for="edgeSlider">Edge Size</label>
     <input type="range" min="0" max="100" value="30" class="slider" id="edgeSlider" />
-	<label for="minEdThreshSlider">Min Edge Threshold</label>
-    <input type="range" min="0" max="99" value="50" class="slider" id="minEdThreshSlider" />
-	<label for="maxEdThreshSlider">Max Edge Threshold</label>
-    <input type="range" min="1" max="100" value="100" class="slider" id="maxEdThreshSlider" />
+	<label for="percEdThreshSlider">Percentage of Edges</label>
+    <input type="range" min="0" max="99" value="20" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
 	<label for="timeSlider">Network Time point</label>
@@ -174,52 +173,49 @@
 		  //nv1.volumes[0].colormap = cmaps[i];
 		  if (event.target.id.startsWith("!Ed")){
 			EdColormap = event.target.id.substr(3);
-			for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-			nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeColormap", EdColormap);
-			//currCScale = convertMapperclut2Colorscale();
-			//data[0].colorscale = currCScale;
-			//Plotly.redraw('matrixDiv');
-		  } else {
-			NdColormap = event.target.id.substr(3);
-			for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-			nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeColormap", NdColormap)
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeColormap", EdColormap);
+		  } else { // change map colorscale/colormap
+			mapColormap = event.target.id.substr(4);
+			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
 		  }
 		  toggleGroup(event.target.id);
 		  return;
 		}
 	  if (event.target.id.charAt(0) === "-") {
 			if (event.target.id.substr(1) == "Help"){
-				alert("Naviguate the structural connectome.\nHover on the matrix will highlight the region (or node) on the y axis.\n\n" + 
-				"One click will show this region on the MRI.\nA second on the same region will show only the neighbourhood of this region.\n" + 
-				"Another click will reset the view.\n\n" + 
-				"The edge and node size sliders allow you to change the size of the nodes and edges of the graph displayed on the MRI.\n" + 
-				"The edge and node threshold sliders allow you to set a threshold below which the node or edges are not displayed (on the MRI and matrix).\n");
+				alert("Naviguate the connectivity changes during an epileptic seizure.\n\n Hover on the traces to know the name of the iEEG channel.\n" + 
+				"One click will show this channel on the MRI.\n\n" + 
+				"The edge and electrode size sliders allow you to change the size of the edges and electrodes of the graph displayed on the MRI.\n" + 
+				"The percentage of edges slider allows you to display only a given percentage of edges on the MRI.\n" +
+				"The network time point slider allows you to change the time window (dotted rectangle on the traces) corresponding to the network displayed on the MRI.");
 			} else if (event.target.id.substr(1) == "Authors"){
 				alert("The data were curated and selected by Dr Stanislas Lagarde.\nThe data were processed by Dr Nicolas Roehri, using Fieldtrip.\nThe webpage was written by Dr Nicolas Roehri, using Niivue and Plotly.");
 			}
 			return
 		}
 		
-	if (event.target.id.charAt(0) === "_") {
+	if (event.target.id.charAt(0) === "_") { // select connectivity type
 			currConn = ["_Pow", "_PLV", "_coh", "_env"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			bipElec.edges = edges;
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-			edges.sort((a, b) => b - a)
-			minEdThreshSlider.oninput();
-			maxEdThreshSlider.oninput();
-			edgeSlider.oninput();
 			toggleGroup(event.target.id);
+			if (currConn > 0){
+				edges.sort((a, b) => b - a)
+				percEdThreshSlider.oninput();
+				edgeSlider.oninput();
+				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+			}
 		}
-	  if (event.target.id.charAt(0) === "?") {
+	  if (event.target.id.charAt(0) === "?") { // select network metric
 			currMetric = ["?strength", "?CC"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			toggleGroup(event.target.id);
 		}
-	  if (event.target.id.charAt(0) === "+") {
+	  if (event.target.id.charAt(0) === "+") { // select frequency band
 			// turn off current heatmap
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
@@ -227,11 +223,14 @@
 			bipElec.edges = edges;
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-			edges.sort((a, b) => b - a)
-			minEdThreshSlider.oninput();
-			maxEdThreshSlider.oninput();
-			edgeSlider.oninput();
+			
 			toggleGroup(event.target.id);
+			if (currConn > 0){
+				edges.sort((a, b) => b - a)
+				percEdThreshSlider.oninput();
+				edgeSlider.oninput();
+				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+			}
 		}
 	  let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
 	  let measStr = ['strength', 'clustering coef.'];
@@ -248,11 +247,30 @@
   nodeSlider.oninput = function () {
     nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
   }
-  minEdThreshSlider.oninput = function () {
-    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMin", this.value*.01*edges[0]);
+  percEdThreshSlider.oninput = function () {
+    //  as edges are aleardy sorted in a descending way,
+	let edMin = edges[Math.round(this.value*.01*edges.length)];
+    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMin", edMin);
   }
-  maxEdThreshSlider.oninput = function () {
-    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", this.value*.01*edges[0]);
+  timeSlider.oninput = async function () {
+	currWindow = this.valueAsNumber;
+	// update only values within nested objects (x0 and x1 or rectangle)
+	var update = {
+		'shapes[0].x0': timeSample[currWindow]-3,   // updates the start of the rectangle
+		'shapes[0].x1': timeSample[currWindow]+3    // updates the end of the rectangle
+	};
+	Plotly.relayout('seizureTraces', update)
+	if (currConn == 0){return}
+	await loadConnMaP('edges')
+	bipElec.edges = edges;
+	nv1.meshes.pop();
+	nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+	if (currConn > 0){
+		edges.sort((a, b) => b - a)
+		percEdThreshSlider.oninput();
+		edgeSlider.oninput();
+		nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+	}
   }
   
   const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1ds.eeg";
@@ -267,26 +285,32 @@
   var currWindow = 3; // variable with the current time window of the connectivity graph (3D)
   var edges = []; // variable with the current connectivity graph (3D)
   var EdColormap = "Inferno";
-  var NdColormap = "Plasma";
+  var mapColormap = "YlOrRd";
   
-  async function loadConnMaP(){
+  async function loadConnMaP(uploadData = 'all'){
 		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
 		let connectivity = await response.json()
 		let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
 		let measStr = ['strength', 'CC'];
 		let meas = measStr[currMetric];
-		if (currConn == 0){meas = "pow";}
+		if (currConn == 0){  // no connectivity matrix only power
+			meas = "pow";
+			edges = [];
+		} else {
+			edges = connectivity[connStr[currConn]].mat[currWindow];
+		}
+		if (uploadData === 'edges'){return} // only update Map if asked
 		let currMap = {
 			x: connectivity[connStr[currConn]].t,
 			z: connectivity[connStr[currConn]][meas],
 			type: 'heatmap',
-			colorscale: 'YlOrRd',
+			colorscale: mapColormap,
+			reversescale: true,
 			zmin:0,
 			opacity:1,
 			showscale: true,
 		};
 		connMap[0]  = currMap;
-		edges = connectivity[connStr[currConn]].mat[currWindow];
   }
   
   function centerCrosshairOnNode(nodeID){
@@ -324,14 +348,31 @@
 	  yaxis: {
 		  visible: false,
 		  automargin: true,
+		  autorange: 'reversed'
 		  //tickfont: { size: 14}
 	  },
-	  showlegend: false
+	  showlegend: false,
+	  shapes:[
+		{
+			type: 'rect',
+			xref: 'x',
+			yref: 'y',
+			x0: timeSample[currWindow]-3,
+			y0: -1,
+			x1: timeSample[currWindow]+3,
+			y1: Number(hdr["Common Infos"]["NumberOfChannels"])+1-1,
+			line: {
+				color: 'rgb(0, 0, 0)',
+				width: 5,
+				dash: 'dot'
+			},
+			fillcolor: ''
+		}]
 	};
 	var config = {responsive: true};
 	Plotly.newPlot('seizureTraces', connMap, layout, config);
 	// update line width to 1
-	Plotly.restyle(seizureTraces, {'line.width': 1});
+	Plotly.restyle(seizureTraces, {'line.width': 1.5});
 	
 	seizureTraces.on('plotly_click', function(data){
 		let nodeID = data.points[0].curveNumber-1; // 0 is the heatmap, hence -1
@@ -398,9 +439,8 @@
   bipElec.edgeColormapNegative = '';
   nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
   edges.sort((a, b) => b - a)
-  minEdThreshSlider.oninput();
-  maxEdThreshSlider.oninput();
-  
+  percEdThreshSlider.oninput();
+  nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
 	buttons[i].addEventListener("click", onButtonClick, false);
@@ -411,7 +451,7 @@
 	let char03 = id.slice(0,3);
     for (let i = 0; i < buttons.length; i++) {
 	  if (buttons[i].id.charAt(0) !== char0) continue;
-	  if ((char03 === "!Ed" || char03 === "!Nd") && (buttons[i].id.slice(0,3) !== char03)) continue;
+	  if ((char03 === "!Ed" || char03 === "!Map") && (buttons[i].id.slice(0,3) !== char03)) continue;
 	  buttons[i].classList.remove("dropdown-item-checked");
 	  if (buttons[i].id === id)
 		buttons[i].classList.add("dropdown-item-checked");
