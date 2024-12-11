@@ -63,7 +63,9 @@
 			<a class="viewBtn" id="_Pow">Power</a> 
           <a class="viewBtn dropdown-item-checked" id="_PLV">PLV</a> 
           <a class="viewBtn" id="_coh">coherence</a> 
-		  <a class="viewBtn" id="_env">envelope correlation</a> 
+		  <a class="viewBtn" id="_env">envelope correlation</a>
+		  <a class="viewBtn divider" id="_ciPLV">corrected imaginary PLV</a> 
+          <a class="viewBtn" id="_cicoh">corrected imaginary coherence</a> 
         </div>
     </div>
 	<div class="dropdown">
@@ -87,6 +89,7 @@
         <div class="dropdown-content">
           <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
 		  <a class="viewBtn" id="?CC">clustering coef.</a>
+		  <a class="viewBtn" id="?eigCent">eigenvect. centrality.</a>
         </div>
     </div>
 	<div class="dropdown">
@@ -116,9 +119,9 @@
 	</div>
   <footer>
 	<label for="edgeSlider">Edge Size</label>
-    <input type="range" min="0" max="100" value="30" class="slider" id="edgeSlider" />
+    <input type="range" min="0" max="100" value="10" class="slider" id="edgeSlider" />
 	<label for="percEdThreshSlider">Percentage of Edges</label>
-    <input type="range" min="0" max="99" value="20" class="slider" id="percEdThreshSlider" style="width:30%"/>
+    <input type="range" min="0" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
 	<label for="timeSlider">Network Time point</label>
@@ -195,7 +198,7 @@
 		}
 		
 	if (event.target.id.charAt(0) === "_") { // select connectivity type
-			currConn = ["_Pow", "_PLV", "_coh", "_env"].indexOf(event.target.id);
+			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			bipElec.edges = edges;
@@ -210,7 +213,7 @@
 			}
 		}
 	  if (event.target.id.charAt(0) === "?") { // select network metric
-			currMetric = ["?strength", "?CC"].indexOf(event.target.id);
+			currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			toggleGroup(event.target.id);
@@ -232,8 +235,8 @@
 				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 			}
 		}
-	  let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
-	  let measStr = ['strength', 'clustering coef.'];
+	  let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+	  let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
 	  let meas = measStr[currMetric];
 	  if (currConn == 0){ meas = 'power';}
 	  nv1.document.labels[0].text = connStr[currConn] + ": " + meas + ", " + freqList[currFreqId];
@@ -249,7 +252,7 @@
   }
   percEdThreshSlider.oninput = function () {
     //  as edges are aleardy sorted in a descending way,
-	let edMin = edges[Math.round(this.value*.01*edges.length)];
+	let edMin = edges[Math.round(this.value*.001*edges.length)];
     nv1.setMeshProperty(nv1.meshes[1].id, "edgeMin", edMin);
   }
   timeSlider.oninput = async function () {
@@ -281,7 +284,7 @@
   var connMap = []; // variable with the current heatmap
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
   var currConn = 1; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
-  var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff.])
+  var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
   var currWindow = 3; // variable with the current time window of the connectivity graph (3D)
   var edges = []; // variable with the current connectivity graph (3D)
   var EdColormap = "Inferno";
@@ -290,8 +293,8 @@
   async function loadConnMaP(uploadData = 'all'){
 		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
 		let connectivity = await response.json()
-		let connStr = ['POW', 'PLV', 'coh', 'envCorr'];
-		let measStr = ['strength', 'CC'];
+		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+		let measStr = ['strength', 'CC', 'eigCent'];
 		let meas = measStr[currMetric];
 		if (currConn == 0){  // no connectivity matrix only power
 			meas = "pow";
@@ -415,7 +418,7 @@
 		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPLEFT);
   await nv1.loadVolumes(volumeList1);
-  nv1.setClipPlane([-0.0, 0, 40]);
+  //nv1.setClipPlane([-0.0, 0, 40]);
   nv1.volumes[0].colorbarVisible = false
   //thickness of slab. Value 0..1.73 (cube opposite corner length is sqrt(3)).
   nv1.setClipPlaneThick(1.73)
@@ -440,6 +443,7 @@
   nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
   edges.sort((a, b) => b - a)
   percEdThreshSlider.oninput();
+  edgeSlider.oninput();
   nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
