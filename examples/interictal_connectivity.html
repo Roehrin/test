@@ -43,19 +43,6 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
-          Map Color
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="!MapYlOrRd">YlOrRd</a>
-          <a class="viewBtn" id="!MapYlGnBu">YlGnBu</a>
-          <a class="viewBtn" id="!MapGreens">Greens</a>
-		  <a class="viewBtn" id="!MapReds">Reds</a>
-		  <a class="viewBtn" id="!MapBlues">Blues</a>
-        </div>
-    </div>
-	<div class="dropdown">
-        <button class="dropbtn">
           Connectivity
           <i class="fa fa-caret-down"></i>
         </button>
@@ -79,17 +66,6 @@
 		  <a class="viewBtn" id="+alpha">alpha</a> 
 		  <a class="viewBtn" id="+beta">beta</a> 
 		  <a class="viewBtn" id="+gamma">gamma</a> 
-        </div>
-    </div>
-	<div class="dropdown">
-        <button class="dropbtn">
-          Network measure
-          <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
-		  <a class="viewBtn" id="?CC">clustering coef.</a>
-		  <a class="viewBtn" id="?eigCent">eigenvect. centrality.</a>
         </div>
     </div>
 	<div class="dropdown">
@@ -225,37 +201,13 @@
 			Plotly.redraw('matrixDiv');
 		  } else {
 			NdColormap = event.target.id.substr(3);
-			for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
+			for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++)
 			nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeColormap", NdColormap)
 		  }
 		  toggleGroup(event.target.id);
 		  return;
 		}
-	  if (event.target.id.charAt(0) === "_") {
-		  nv1.meshes = []; //close open meshes
-		  // "_SC""_SClog""_SCCC""_SClogCC""_SCNE""_SClogNE"
-		  let lbl1 = "fiber count";
-		  let lbl2 = "strength";
-		  if (event.target.id === "_SC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC.jcon";}
-		  else if (event.target.id === "_SClog"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber.jcon"; lbl1 = "log(fiber count)";}
-		  else if (event.target.id === "_SCCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_CC.jcon" ; lbl2 = "clustering coeff.";}
-		  else if (event.target.id === "_SClogCC"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_CC.jcon" ; lbl1 = "log(fiber count)"; lbl2 = "clustering coeff.";}
-		  else if (event.target.id === "_SCNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SC_NE.jcon" ; lbl2 = "nodal efficiency";}
-		  else if (event.target.id === "_SClogNE"){ fname = "https://roehrin.github.io/test/src/Lausanne2_ROI_n_SClogfiber_NE.jcon" ; lbl1 = "log(fiber count)"; lbl2 = "nodal efficiency";}
-		  await nv1.loadConnectomeFromUrl(fname);
-		  nv1.document.labels[0].text = "edge: " + lbl1 + ",\n node: " + lbl2;
-		  nv1.meshes[0].edgeColormapNegative = '';
-		  data.pop()
-		  data[0] = convertConn2Heatmap()[0];
-		  updateMeshes()
-		  toggleGroup(event.target.id);
-		  matrixDiv.layout.yaxis.autorange = true;
-		  matrixDiv.layout.xaxis.autorange = true;
-		  matrixDiv.layout.xaxis.dtick = 0;
-		  matrixDiv.layout.xaxis.tickmode = "auto";
-		  clickMode = 0;
-		  percEdThreshSlider.oninput()
-		} else if (event.target.id.charAt(0) === "-") {
+	  if (event.target.id.charAt(0) === "-") {
 			if (event.target.id.substr(1) == "Help"){
 				alert("Naviguate the structural connectome.\nHover on the matrix will highlight the region (or node) on the y axis.\n\n" + 
 				"One click will show this region on the MRI.\nA second on the same region will show only the neighbourhood of this region.\n" + 
@@ -265,7 +217,58 @@
 			} else if (event.target.id.substr(1) == "Authors"){
 				alert("The webpage was written by Dr Nicolas Roehri, using Niivue and Plotly.");
 			}
-		}	
+		}
+	  if (event.target.id.charAt(0) === "_") { // select connectivity type
+			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
+			await loadConnMaP()
+			bipElec.edges = edges;
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			data.pop()
+			data[0] = convertConn2Heatmap()[0];
+			Plotly.redraw('matrixDiv');
+			toggleGroup(event.target.id);
+			if (currConn > 0){
+				edges.sort((a, b) => b - a)
+				percEdThreshSlider.oninput();
+				edgeSlider.oninput();
+				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+				Plotly.restyle(matrixDiv, {'zmax': edges[0]});
+			}
+		}
+	  //if (event.target.id.charAt(0) === "?") { // select network metric
+		//	currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
+			//await loadConnMaP()
+			//Plotly.redraw('matrixDiv');
+			//toggleGroup(event.target.id);
+		//}
+	  if (event.target.id.charAt(0) === "+") { // select frequency band
+			// turn off current heatmap
+			currFreqId = freqList.indexOf(event.target.id.substr(1));
+			await loadConnMaP()
+			//Plotly.redraw('matrixDiv');
+			bipElec.edges = edges;
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			data.pop()
+			data[0] = convertConn2Heatmap()[0];
+			Plotly.redraw('matrixDiv');
+			toggleGroup(event.target.id);
+			if (currConn > 0){
+				edges.sort((a, b) => b - a)
+				percEdThreshSlider.oninput();
+				edgeSlider.oninput();
+				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+				Plotly.restyle(matrixDiv, {'zmax': edges[0]});
+			}
+		}
+	  let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+	  let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
+	  let meas = measStr[currMetric];
+	  if (currConn == 0){ meas = 'power';}
+	  nv1.document.labels[0].text = connStr[currConn] + ", " + freqList[currFreqId];
+	  //nv1.updateGLVolume();
+	  nv1.drawScene()
   }
   // Update the current slider value (each time you drag the slider handle)
   edgeSlider.oninput = function () {
@@ -286,8 +289,7 @@
 	for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++){
 		nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeMin", edMin);
 	}
-	data[0].zmin = edMin;
-	Plotly.redraw('matrixDiv');
+	Plotly.restyle(matrixDiv, {'zmin': edMin});
   }
   
   // do MRI plot
@@ -321,7 +323,7 @@
   await loadConnMaP()
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");
-  nv1.addLabel("PLV: strength,\n" + freqList[currFreqId], 
+  nv1.addLabel("PLV, " + freqList[currFreqId], 
 		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPLEFT);
   await nv1.loadVolumes(volumeList1);
@@ -349,6 +351,9 @@
   bipElec.edgeColormapNegative = '';
   nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
   let nodes = nv1.meshes[1].nodes;
+  //nv1.addLabel(nodes[0].names, 
+	//	{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+	//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);
   
 	// do matrix plot
 	var currCScale = convertMapperclut2Colorscale();
@@ -374,15 +379,16 @@
 	};
 	Plotly.newPlot('matrixDiv', data, layout, {responsive: true});
 	matrixDiv.on('plotly_hover', function(data){
+		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
 		let nodeID = data.points[0].pointIndex[0];
-		nv1.document.labels[0].text = nodes[nodeID].name;
+		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connStr[currConn] + ", " + freqList[currFreqId];
 		nv1.updateGLVolume();
 	});
 	var clickMode = 0;
 	var clickROI = 0;
 	matrixDiv.on('plotly_click', function(data){
 		let nodeID = data.points[0].pointIndex[0];
-		if (nodes[clickROI].name == nv1.document.labels[0].text) clickMode++; // if click on the same ROI, then change behaviour
+		if (nv1.document.labels[0].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
 		clickROI = nodeID;
 		if (clickMode === 0){
 			centerCrosshairOnNode(nodeID);
@@ -393,10 +399,8 @@
 				'xaxis.autorange': false,
 				'yaxis.range': [nodeID+.5,nodeID-.5],
 				'xaxis.range': [-.5, nodes.length+.5],
-				'xaxis.dtick': 1,
 				'xaxis.tickmode': "array",
-				'xaxis.tickvals': ConnectedNodesIdx,
-				'xaxis.ticktext': ConnectedNodes
+				'xaxis.tickvals': ConnectedNodesIdx
 			};
 			Plotly.relayout('matrixDiv', update)
 			clickMode++;
@@ -405,7 +409,6 @@
 			var update = {
 				'yaxis.autorange': true,
 				'xaxis.autorange': true,
-				'xaxis.dtick': 0,
 				'xaxis.tickmode': "auto"
 			};
 			Plotly.relayout('matrixDiv', update)
@@ -420,6 +423,7 @@
   percEdThreshSlider.oninput();
   edgeSlider.oninput();
   nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+  Plotly.restyle(matrixDiv, {'zmax': edges[0]});
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
 	buttons[i].addEventListener("click", onButtonClick, false);
@@ -492,7 +496,7 @@
 		
 		if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 		// deep copy of the original edges of the connectome
-		let currentEdges = JSON.parse(JSON.stringify(nv1.meshes[0].edges));
+		let currentEdges = JSON.parse(JSON.stringify(nv1.meshes[1].edges));
 		let ConnectedNodes = []; // init list of connected nodes
 		let ConnectedNodesIdx = []; // init list of connected nodes indices
 		let nodes = nv1.meshes[1].nodes;
@@ -515,7 +519,7 @@
 			}
 		}
 		// deep copy of the original connectome to modify its edges
-		let newConnectome = JSON.parse(JSON.stringify(nv1.meshes[0].connectome));
+		let newConnectome = JSON.parse(JSON.stringify(nv1.meshes[1].connectome));
 		newConnectome.edges = currentEdges;
 		newConnectome.edgeColormapNegative = "";
 		nv1.addMesh(nv1.loadConnectomeAsMesh(newConnectome))
