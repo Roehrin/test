@@ -123,7 +123,7 @@
 	<label for="percEdThreshSlider">Percentage of Edges</label>
     <input type="range" min="0" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
-    <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
+    <input type="range" min="0" max="150" value="15" class="slider" id="nodeSlider" />
 	<label for="timeSlider">Network Time point</label>
     <input type="range" min="0" max="5" value="3" class="slider" id="timeSlider" />
     <button id="reset">reset</button>
@@ -202,6 +202,7 @@
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			bipElec.edges = edges;
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
 			toggleGroup(event.target.id);
@@ -224,6 +225,7 @@
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			bipElec.edges = edges;
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
 			
@@ -245,15 +247,18 @@
   }
   
   edgeSlider.oninput = function () {
-    nv1.setMeshProperty(nv1.meshes[1].id, "edgeScale", this.value*.1)
+    for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++)
+    nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeScale", this.value*.1)
   }
   nodeSlider.oninput = function () {
     nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
   }
   percEdThreshSlider.oninput = function () {
     //  as edges are aleardy sorted in a descending way,
-	let edMin = edges[Math.round(this.value*.001*edges.length)];
-    nv1.setMeshProperty(nv1.meshes[1].id, "edgeMin", edMin);
+	edMin = edges[Math.round(this.value*.001*edges.length)];
+    for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++){
+		nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeMin", edMin);
+	}
   }
   timeSlider.oninput = async function () {
 	currWindow = this.valueAsNumber;
@@ -287,6 +292,7 @@
   var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
   var currWindow = 3; // variable with the current time window of the connectivity graph (3D)
   var edges = []; // variable with the current connectivity graph (3D)
+  var edMin = 0; // variable to store minimum edge value to display
   var EdColormap = "Inferno";
   var mapColormap = "YlOrRd";
   
@@ -377,20 +383,12 @@
 	// update line width to 1
 	Plotly.restyle(seizureTraces, {'line.width': 1.5});
 	
-	seizureTraces.on('plotly_click', function(data){
-		let nodeID = data.points[0].curveNumber-1; // 0 is the heatmap, hence -1
-		centerCrosshairOnNode(nodeID);
-	});
+	//seizureTraces.on('plotly_click', function(data){
+	//	let nodeID = data.points[0].curveNumber-1; // 0 is the heatmap, hence -1
+	//	centerCrosshairOnNode(nodeID);
+	//});
 	
-	// too slow
-	//seizureTraces.on('plotly_hover', function(data){
-	//	let chnID = data.points[0].curveNumber;
-	//	Plotly.restyle(seizureTraces, {'line.width': 3}, chnID);
-	//});
-	//seizureTraces.on('plotly_unhover', function(data){
-	//let chnID = data.points[0].curveNumber;
-	//	Plotly.restyle(seizureTraces, {'line.width': 1},chnID);
-	//});
+
   var volumeList1 = [
     {
       url: "https://roehrin.github.io/test/ictal_connectivity/patient_mri.nii", 
@@ -461,4 +459,72 @@
 		buttons[i].classList.add("dropdown-item-checked");
     }
   } // toggleGroup()
+  var nodes = nv1.meshes[1].nodes;
+	seizureTraces.on('plotly_hover', function(data){
+		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+		let measStr = ['strength', 'CC', 'centrality'];
+		let nodeID = data.points[0].curveNumber-1;
+		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connStr[currConn] + ", " + measStr[currMetric] + ", " + freqList[currFreqId];
+		nv1.updateGLVolume();
+	});
+	var clickMode = 0;
+	var clickROI = 0;
+	seizureTraces.on('plotly_click', function(data){
+		let nodeID = data.points[0].curveNumber-1;
+		if (nv1.document.labels[0].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
+		clickROI = nodeID;
+		if (clickMode === 0){
+			centerCrosshairOnNode(nodeID);
+		} else if (clickMode === 1){
+			let ConnectedNodes, ConnectedNodesIdx = showNeighbourhood(nodeID);		
+			clickMode++;
+		} else {
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
+			nv1.setMeshProperty(nv1.meshes[1].id, "visible", true);
+			centerCrosshairOnNode(nodeID);
+			clickMode = 0;
+		}
+	});
+	
+	function showNeighbourhood(node_idx){
+		
+		if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
+		// deep copy of the original edges of the connectome
+		let currentEdges = JSON.parse(JSON.stringify(nv1.meshes[1].edges));
+		let ConnectedNodes = []; // init list of connected nodes
+		let ConnectedNodesIdx = []; // init list of connected nodes indices
+		let nodes = nv1.meshes[1].nodes;
+		// set to zero all edges not connected to the node of interest
+		for (let i = 0; i < currentEdges.length; i++) {
+			// if edge is already zero continue
+			if (currentEdges[i].colorValue == 0){continue}
+			if ((currentEdges[i].first != node_idx) && (currentEdges[i].second != node_idx) ){
+				currentEdges[i].colorValue = 0;
+				continue
+			}
+			if (currentEdges[i].colorValue <= edMin){continue} // here edge belong to neighbourhood, but we don't want to write it's name if edve value to low
+			// check if first correspond to the node of interest, if not add it otherwise add the second
+			// (as it means the second is the node of interest)
+			if (nodes[currentEdges[i].first].name != nodes[node_idx].name){
+				ConnectedNodes.push(nodes[currentEdges[i].first].name);
+				ConnectedNodesIdx.push(currentEdges[i].first);
+			} else {
+				ConnectedNodes.push(nodes[currentEdges[i].second].name);
+				ConnectedNodesIdx.push(currentEdges[i].second);
+			}
+		}
+		// deep copy of the original connectome to modify its edges
+		let newConnectome = JSON.parse(JSON.stringify(nv1.meshes[1].connectome));
+		newConnectome.edges = currentEdges;
+		newConnectome.edgeColormapNegative = "";
+		newConnectome.edgeMin = edMin;
+		nv1.addMesh(nv1.loadConnectomeAsMesh(newConnectome))
+		nv1.meshes[2].colorbarVisible = false;
+		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)
+		nv1.setMeshProperty(nv1.meshes[2].id, "edgeScale", edgeSlider.value*.1)
+		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", .01)
+		nv1.setMeshProperty(nv1.meshes[1].id, "visible", false);
+		return ConnectedNodes, ConnectedNodesIdx
+		
+	}// end showNeighbourhood
 </script>

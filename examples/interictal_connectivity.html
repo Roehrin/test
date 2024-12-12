@@ -99,7 +99,7 @@
 	<label for="percEdThreshSlider">Percentage of Edges</label>
     <input type="range" min="0" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
-    <input type="range" min="0" max="150" value="30" class="slider" id="nodeSlider" />
+    <input type="range" min="1" max="150" value="15" class="slider" id="nodeSlider" />
 	<label for="NdThreshSlider">Node Threshold</label>
     <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
     <button id="reset">reset</button>
@@ -121,6 +121,7 @@
   var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
   var currWindow = 0; // variable with the current time window of the connectivity graph (3D)
   var edges = []; // variable with the current connectivity graph (3D)
+  var edMin = 0; // variable to store minimum edge value to display
   var EdColormap = "Inferno";
   var NdColormap = "Plasma";
   var mapColormap = "YlOrRd";
@@ -222,12 +223,14 @@
 			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
 			await loadConnMaP()
 			bipElec.edges = edges;
-			nv1.meshes.pop();
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
+			nv1.meshes.pop(); // remove current graph
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
 			data.pop()
 			data[0] = convertConn2Heatmap()[0];
 			Plotly.redraw('matrixDiv');
 			toggleGroup(event.target.id);
+			clickMode = 0;
 			if (currConn > 0){
 				edges.sort((a, b) => b - a)
 				percEdThreshSlider.oninput();
@@ -276,8 +279,9 @@
     nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeScale", this.value*.1)
   }
   nodeSlider.oninput = function () {
-	for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-    nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.1);
+	//for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
+    //nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.1);
+	nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
   }
   // Here we suppose that the node and edge values are normalised in [0 1]
   NdThreshSlider.oninput = function () {
@@ -285,7 +289,7 @@
     nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeMinColor", this.value * .01);
   }
   percEdThreshSlider.oninput = function () {
-	let edMin = edges[Math.round(this.value*.001*edges.length)];
+	edMin = edges[Math.round(this.value*.001*edges.length)];
 	for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++){
 		nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeMin", edMin);
 	}
@@ -350,7 +354,8 @@
   bipElec.edgeColormap = EdColormap;
   bipElec.edgeColormapNegative = '';
   nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-  let nodes = nv1.meshes[1].nodes;
+  nodeSlider.oninput()
+  var nodes = nv1.meshes[1].nodes;
   //nv1.addLabel(nodes[0].names, 
 	//	{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 	//	undefined, niivue.LabelAnchorPoint.TOPRIGHT);
@@ -400,7 +405,9 @@
 				'yaxis.range': [nodeID+.5,nodeID-.5],
 				'xaxis.range': [-.5, nodes.length+.5],
 				'xaxis.tickmode': "array",
-				'xaxis.tickvals': ConnectedNodesIdx
+				'xaxis.dtick': 1,
+				'xaxis.tickvals': ConnectedNodesIdx,
+				'xaxis.ticktext': ConnectedNodes
 			};
 			Plotly.relayout('matrixDiv', update)
 			clickMode++;
@@ -409,7 +416,8 @@
 			var update = {
 				'yaxis.autorange': true,
 				'xaxis.autorange': true,
-				'xaxis.tickmode': "auto"
+				'xaxis.tickmode': "auto",
+				'xaxis.dtick': 0
 			};
 			Plotly.relayout('matrixDiv', update)
 			nv1.setMeshProperty(nv1.meshes[1].id, "visible", true);
@@ -503,11 +511,12 @@
 		// set to zero all edges not connected to the node of interest
 		for (let i = 0; i < currentEdges.length; i++) {
 			// if edge is already zero continue
-			if (currentEdges[i].colorValue === 0){ continue}
+			if (currentEdges[i].colorValue == 0){continue}
 			if ((currentEdges[i].first != node_idx) && (currentEdges[i].second != node_idx) ){
 				currentEdges[i].colorValue = 0;
 				continue
 			}
+			if (currentEdges[i].colorValue <= edMin){continue} // here edge belong to neighbourhood, but we don't want to write it's name if edve value to low
 			// check if first correspond to the node of interest, if not add it otherwise add the second
 			// (as it means the second is the node of interest)
 			if (nodes[currentEdges[i].first].name != nodes[node_idx].name){
@@ -522,12 +531,13 @@
 		let newConnectome = JSON.parse(JSON.stringify(nv1.meshes[1].connectome));
 		newConnectome.edges = currentEdges;
 		newConnectome.edgeColormapNegative = "";
+		newConnectome.edgeMin = edMin;
 		nv1.addMesh(nv1.loadConnectomeAsMesh(newConnectome))
 		nv1.meshes[2].colorbarVisible = false;
 		nv1.setMeshProperty(nv1.meshes[2].id, "nodeColormap", NdColormap)
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeScale", edgeSlider.value*.1)
-		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", nodeSlider.value*.1)
+		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", .01)
 		nv1.setMeshProperty(nv1.meshes[1].id, "visible", false);
 		return ConnectedNodes, ConnectedNodesIdx
 		
