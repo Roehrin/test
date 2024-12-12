@@ -83,7 +83,7 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
-          Network measure
+          Nodal measure
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
@@ -121,7 +121,7 @@
 	<label for="edgeSlider">Edge Size</label>
     <input type="range" min="0" max="100" value="10" class="slider" id="edgeSlider" />
 	<label for="percEdThreshSlider">Percentage of Edges</label>
-    <input type="range" min="0" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
+    <input type="range" min="1" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="15" class="slider" id="nodeSlider" />
 	<label for="timeSlider">Network Time point</label>
@@ -180,14 +180,16 @@
 		  } else { // change map colorscale/colormap
 			mapColormap = event.target.id.substr(4);
 			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
+			chanAstickLabel()
 		  }
 		  toggleGroup(event.target.id);
 		  return;
 		}
 	  if (event.target.id.charAt(0) === "-") {
 			if (event.target.id.substr(1) == "Help"){
-				alert("Naviguate the connectivity changes during an epileptic seizure.\n\n Hover on the traces to know the name of the iEEG channel.\n" + 
-				"One click will show this channel on the MRI.\n\n" + 
+				alert("Navigate the connectivity changes during an epileptic seizure.\n\n Hover on the traces to know the name of the iEEG channel.\n" + 
+				"One click will show this channel on the MRI.\n A second on the same region will show only the neighbourhood of this channel.\n" + 
+				"Another click will reset the view.\n\n" + 
 				"The edge and electrode size sliders allow you to change the size of the edges and electrodes of the graph displayed on the MRI.\n" + 
 				"The percentage of edges slider allows you to display only a given percentage of edges on the MRI.\n" +
 				"The network time point slider allows you to change the time window (dotted rectangle on the traces) corresponding to the network displayed on the MRI.");
@@ -201,6 +203,8 @@
 			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
+			chanAstickLabel()
 			bipElec.edges = edges;
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
@@ -217,6 +221,8 @@
 			currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
+			chanAstickLabel()
 			toggleGroup(event.target.id);
 		}
 	  if (event.target.id.charAt(0) === "+") { // select frequency band
@@ -224,6 +230,8 @@
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
+			chanAstickLabel()
 			bipElec.edges = edges;
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
@@ -263,11 +271,14 @@
   timeSlider.oninput = async function () {
 	currWindow = this.valueAsNumber;
 	// update only values within nested objects (x0 and x1 or rectangle)
+	
 	var update = {
 		'shapes[0].x0': timeSample[currWindow]-3,   // updates the start of the rectangle
 		'shapes[0].x1': timeSample[currWindow]+3    // updates the end of the rectangle
 	};
 	Plotly.relayout('seizureTraces', update)
+	Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);	
+	chanAstickLabel()
 	if (currConn == 0){return}
 	await loadConnMaP('edges')
 	bipElec.edges = edges;
@@ -336,6 +347,8 @@
   
   await loadConnMaP()
   connMap.push(...iEEGdata)
+  //let chanNames = Object.values( hdr['Channel Infos']).map(function(item) {return item["label"]});
+  //let chanVec = Array.from({length: hdr['Common Infos'].NumberOfChannels}, (_, i) => i);
   var layout = {
       hovermode:'closest',
 	  xaxis: {
@@ -348,17 +361,23 @@
 	  },
 	  autosize: true,
 	  margin: {
-		l: 2,
+		l: 100,
 		r: 2,
 		b: 50,
 		t: 2,
 		//pad: 4
 	  },
 	  yaxis: {
-		  visible: false,
+		  //tickvals: chanVec,
+		  //ticktext: chanNames,
+		  //dtick: 0,
+		  //tickformat: '.1f',
+		  visible: true,
+		  //tickmode: "array",
+		  nticks: 20,
 		  automargin: true,
-		  autorange: 'reversed'
-		  //tickfont: { size: 14}
+		  autorange: 'reversed',
+		  tickfont: { size: 11}
 	  },
 	  showlegend: false,
 	  shapes:[
@@ -382,13 +401,6 @@
 	Plotly.newPlot('seizureTraces', connMap, layout, config);
 	// update line width to 1
 	Plotly.restyle(seizureTraces, {'line.width': 1.5});
-	
-	//seizureTraces.on('plotly_click', function(data){
-	//	let nodeID = data.points[0].curveNumber-1; // 0 is the heatmap, hence -1
-	//	centerCrosshairOnNode(nodeID);
-	//});
-	
-
   var volumeList1 = [
     {
       url: "https://roehrin.github.io/test/ictal_connectivity/patient_mri.nii", 
@@ -459,11 +471,23 @@
 		buttons[i].classList.add("dropdown-item-checked");
     }
   } // toggleGroup()
-  var nodes = nv1.meshes[1].nodes;
+	var nodes = nv1.meshes[1].nodes;
+	chanAstickLabel()
+	seizureTraces.on('plotly_relayout', function(eventdata){chanAstickLabel()});
+	function chanAstickLabel(){
+		Plotly.d3.selectAll(".ytick text").each(function(d, i) {
+				if (d.x > hdr["Common Infos"]["NumberOfChannels"] || d.x < 0 || !Number.isInteger(d.x)) {
+					Plotly.d3.select(this).html('')
+				} else{
+					Plotly.d3.select(this).html(nodes[d.x].name);
+				}
+		})
+	}
 	seizureTraces.on('plotly_hover', function(data){
 		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
 		let measStr = ['strength', 'CC', 'centrality'];
 		let nodeID = data.points[0].curveNumber-1;
+		if (nodeID === -1) nodeID = data.points[0].pointIndex[0]; // clicked on heatmap not traces
 		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connStr[currConn] + ", " + measStr[currMetric] + ", " + freqList[currFreqId];
 		nv1.updateGLVolume();
 	});
@@ -471,6 +495,7 @@
 	var clickROI = 0;
 	seizureTraces.on('plotly_click', function(data){
 		let nodeID = data.points[0].curveNumber-1;
+		if (nodeID === -1) nodeID = data.points[0].pointIndex[0]; // clicked on heatmap not traces
 		if (nv1.document.labels[0].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
 		clickROI = nodeID;
 		if (clickMode === 0){
