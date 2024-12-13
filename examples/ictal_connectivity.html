@@ -125,7 +125,7 @@
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="0" max="150" value="15" class="slider" id="nodeSlider" />
 	<label for="timeSlider">Network Time point</label>
-    <input type="range" min="0" max="5" value="3" class="slider" id="timeSlider" />
+    <input type="range" min="0" max="5" value="0" class="slider" id="timeSlider" />
     <button id="reset">reset</button>
   </footer>
   </body>
@@ -296,14 +296,15 @@
   const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
   const iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-  const timeSample = [10, 14.5, 17.5, 20, 25, 30];
-  var connMap = []; // variable with the current heatmap
+  
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
   var currConn = 1; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
   var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
-  var currWindow = 3; // variable with the current time window of the connectivity graph (3D)
-  var edges = []; // variable with the current connectivity graph (3D)
+  var currWindow = 0; // variable with the current time window of the connectivity graph (3D)
   var edMin = 0; // variable to store minimum edge value to display
+  var edges = []; // variable with the current connectivity graph (3D)
+  var connMap = []; // variable with the current heatmap
+  var timeSample = [];
   var EdColormap = "Inferno";
   var mapColormap = "YlOrRd";
   
@@ -330,6 +331,7 @@
 			opacity:1,
 			showscale: true,
 		};
+		timeSample = connectivity[connStr[currConn]].t;
 		connMap[0]  = currMap;
   }
   
@@ -346,6 +348,7 @@
 	}
   
   await loadConnMaP()
+  timeSlider.max = timeSample.length-1;
   connMap.push(...iEEGdata)
   //let chanNames = Object.values( hdr['Channel Infos']).map(function(item) {return item["label"]});
   //let chanVec = Array.from({length: hdr['Common Infos'].NumberOfChannels}, (_, i) => i);
@@ -374,7 +377,7 @@
 		  //tickformat: '.1f',
 		  visible: true,
 		  //tickmode: "array",
-		  nticks: 20,
+		  //nticks: 20,
 		  automargin: true,
 		  autorange: 'reversed',
 		  tickfont: { size: 11}
