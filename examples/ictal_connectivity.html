@@ -61,7 +61,7 @@
         </button>
         <div class="dropdown-content">
 			<a class="viewBtn" id="_Pow">Power</a> 
-          <a class="viewBtn dropdown-item-checked" id="_PLV">PLV</a> 
+          <a class="viewBtn divider dropdown-item-checked" id="_PLV">PLV</a> 
           <a class="viewBtn" id="_coh">coherence</a> 
 		  <a class="viewBtn" id="_env">envelope correlation</a>
 		  <a class="viewBtn divider" id="_ciPLV">corrected imaginary PLV</a> 
@@ -110,6 +110,9 @@
 				<div class="column">
 						<div id="seizureTraces" style="height:700px">
 						</div>
+						<div>
+						<label for="timeSlider">Network Time point</label>
+						<input type="range" min="0" max="5" value="0" class="slider" id="timeSlider"style="width:70%"/></div>
 				</div>
 				<div class="column">
 					<canvas id="gl1"></canvas>
@@ -122,10 +125,8 @@
     <input type="range" min="1" max="100" value="10" class="slider" id="edgeSlider" />
 	<label for="percEdThreshSlider">Percentage of Edges</label>
     <input type="range" min="1" max="999" value="50" class="slider" id="percEdThreshSlider" style="width:20%"/>
-	<label for="timeSlider">Network Time point</label>
-    <input type="range" min="0" max="5" value="0" class="slider" id="timeSlider" style="width:20%"/>
     <label for="nodeSlider">Node Size</label>
-    <input type="range" min="1" max="150" value="15" class="slider" id="nodeSlider" />
+    <input type="range" min="1" max="200" value="100" class="slider" id="nodeSlider" />
   </footer>
   </body>
 </html>
@@ -199,7 +200,8 @@
 				alert("Navigate the connectivity changes during an epileptic seizure.\n\n Hover on the traces to know the name of the iEEG channel.\n" + 
 				"One click will show this channel on the MRI.\n A second on the same region will show only the neighbourhood of this channel.\n" + 
 				"Another click will reset the view.\n\n" + 
-				"The edge and electrode size sliders allow you to change the size of the edges and electrodes of the graph displayed on the MRI.\n" + 
+				"SEEG electrodes are displayed in yellow on the MRI. Bipolar electrodes according to the maximum of the current time window; their colours are the same as the map \n\n" +
+				"The edge and node size sliders allow you to change the size of the edges and electrodes of the graph displayed on the MRI.\n" + 
 				"The percentage of edges slider allows you to display only a given percentage of edges on the MRI.\n" +
 				"The network time point slider allows you to change the time window (dotted rectangle on the traces) corresponding to the network displayed on the MRI.");
 			} else if (event.target.id.substr(1) == "Authors"){
@@ -275,9 +277,9 @@
 	}
   }
   nodeSlider.oninput = function () {
-	nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
+	nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.01);
 	for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++){
-		nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.1*5);
+		nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.01*6);
 	}
   }
   percEdThreshSlider.oninput = function () {
@@ -293,7 +295,6 @@
 	document.body.style.cursor = 'wait';
 	currWindow = this.valueAsNumber;
 	// update only values within nested objects (x0 and x1 or rectangle)
-	
 	var update = {
 		'shapes[0].x0': timeSample[currWindow]-2,   // updates the start of the rectangle
 		'shapes[0].x1': timeSample[currWindow]+2    // updates the end of the rectangle
@@ -301,8 +302,7 @@
 	Plotly.relayout('seizureTraces', update)
 	Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);	
 	chanAstickLabel()
-	if (currConn == 0){return}
-	await loadConnMaP('edges')
+	await loadConnMaP()
 	updateNodeSize()
 	nv1.meshes.pop();
 	nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
@@ -332,7 +332,7 @@
   var EdColormap = "Inferno";
   var mapColormap = "YlOrRd";
   
-  async function loadConnMaP(uploadData = 'all'){
+  async function loadConnMaP(){
 		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
 		let connectivity = await response.json()
 		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
@@ -340,13 +340,11 @@
 		let meas = measStr[currMetric];
 		if (currConn == 0){  // no connectivity matrix only power
 			meas = "pow";
-			edges = [];
-			nodeSize = [];
+			edges = connectivity['PLV'].mat[currWindow].map(function(val) {return 0}); // if edges = [], 3D view not displayed...
 		} else {
 			edges = connectivity[connStr[currConn]].mat[currWindow];
-			nodeSize = connectivity[connStr[currConn]][meas].map(function(item) {return item[currWindow]});
 		}
-		if (uploadData === 'edges'){return} // only update Map if asked
+		nodeSize = connectivity[connStr[currConn]][meas].map(function(item) {return item[currWindow]});
 		let currMap = {
 			x: connectivity[connStr[currConn]].t,
 			z: connectivity[connStr[currConn]][meas],
@@ -488,17 +486,19 @@
   percEdThreshSlider.oninput();
   edgeSlider.oninput();
   nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+  nodeSlider.oninput();
   var buttons = document.getElementsByClassName("viewBtn");
   for (let i = 0; i < buttons.length; i++){
 	buttons[i].addEventListener("click", onButtonClick, false);
   }
   function updateNodeSize(){
 	bipElec.edges = edges;
-	bipElec.nodeMaxColor = Math.max(...nodeSize);
-	bipElec.nodeMinColor = Math.min(...nodeSize);
+	bipElec.nodeMaxColor = Math.max(...connMap[0].z.flat(1));
+	bipElec.nodeMinColor = Math.min(...connMap[0].z.flat(1));
 	bipElec.nodes.Color = nodeSize;
-	bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/bipElec.nodeMaxColor,2)});; // value < 1 so pow helps visually 
-	bipElec.nodeScale = 8;
+	bipElec.nodeColormap = mapColormap;
+	bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)});; // value < 1 so pow helps visually 
+	bipElec.nodeScale = 6;
   }
   function toggleGroup(id) {
     let buttons = document.getElementsByClassName("viewBtn");
@@ -588,7 +588,6 @@
 		nv1.meshes[2].colorbarVisible = false;
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeScale", edgeSlider.value*.1)
-		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", .01)
 		nv1.setMeshProperty(nv1.meshes[1].id, "visible", false);
 		return ConnectedNodes, ConnectedNodesIdx
 		
