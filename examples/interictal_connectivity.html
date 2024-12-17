@@ -47,8 +47,13 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-			<a class="viewBtn" id="_Pow">Power</a> 
-          <a class="viewBtn dropdown-item-checked" id="_PLV">PLV</a> 
+		  <a class="viewBtn" id="_spike_cooc">Spike co-occurrence</a>
+		  <a class="viewBtn" id="_gamma_cooc">Gamma co-occurrence</a>
+		  <a class="viewBtn" id="_ripple_cooc">Ripple co-occurrence</a>
+		  <a class="viewBtn" id="_norm_spike_cooc">Norm. Spike co-occurrence</a>
+		  <a class="viewBtn" id="_norm_gamma_cooc">Norm. Gamma co-occurrence</a>
+		  <a class="viewBtn" id="_norm_ripple_cooc">Norm. Ripple co-occurrence</a>
+          <a class="viewBtn divider dropdown-item-checked" id="_PLV">PLV</a> 
           <a class="viewBtn" id="_coh">coherence</a> 
 		  <a class="viewBtn" id="_env">envelope correlation</a>
 		  <a class="viewBtn divider" id="_ciPLV">corrected imaginary PLV</a> 
@@ -108,39 +113,36 @@
 </html>
 <script type="module" async>
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
-  import * as vhdrReader from 'https://roehrin.github.io/test/js-scripts/brainvisionReader.js';
   
-  const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1ds.eeg";
-  const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
-  const iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+  const connList = ["spike_cooc", "gamma_cooc", "ripple_cooc", "norm_spike_cooc", "norm_gamma_cooc", "norm_ripple_cooc", "PLV", "coh", "envCorr", "ciPLV", "cicoh"];
   const timeSample = [10, 14.5, 17.5, 20, 25, 30];
   var connMap = []; // variable with the current heatmap
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
-  var currConn = 1; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
+  var currConn = 6; // variable with the current connectivity type (connList)
   var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
-  var currWindow = 0; // variable with the current time window of the connectivity graph (3D)
   var edges = []; // variable with the current connectivity graph (3D)
   var edMin = 0; // variable to store minimum edge value to display
   var EdColormap = "Inferno";
   var NdColormap = "Plasma";
   var mapColormap = "YlOrRd";
   async function loadConnMaP(uploadData = 'all'){
-		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
+		let fname = '';
+		if (currConn > 5){
+			fname = "https://roehrin.github.io/test/interictal_connectivity/connectivity_"  + connList[currConn].toLowerCase() + 
+							"_" + freqList[currFreqId] + ".json"
+		} else{
+			fname = "https://roehrin.github.io/test/interictal_connectivity/connectivity_"  + connList[currConn].toLowerCase() + ".json"
+		}
+		let response = await fetch(fname, {})
 		let connectivity = await response.json()
-		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
 		let measStr = ['strength', 'CC', 'eigCent'];
 		let meas = measStr[currMetric];
-		if (currConn == 0){  // no connectivity matrix only power
-			meas = "pow";
-			edges = [];
-		} else {
-			edges = connectivity[connStr[currConn]].mat[currWindow];
-		}
+		edges = connectivity.mat;
 		if (uploadData === 'edges'){return} // only update Map if asked
 		let currMap = {
-			x: connectivity[connStr[currConn]].t,
-			z: connectivity[connStr[currConn]][meas],
+			x: connectivity.t,
+			z: connectivity[meas],
 			type: 'heatmap',
 			colorscale: mapColormap,
 			reversescale: true,
@@ -220,7 +222,8 @@
 			}
 		}
 	  if (event.target.id.charAt(0) === "_") { // select connectivity type
-			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
+			
+			currConn = metricBtnId.indexOf(event.target.id);
 			await loadConnMaP()
 			bipElec.edges = edges;
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
@@ -231,13 +234,11 @@
 			Plotly.redraw('matrixDiv');
 			toggleGroup(event.target.id);
 			clickMode = 0;
-			if (currConn > 0){
-				edges.sort((a, b) => b - a)
-				percEdThreshSlider.oninput();
-				edgeSlider.oninput();
-				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
-				Plotly.restyle(matrixDiv, {'zmax': edges[0]});
-			}
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+			edgeSlider.oninput();
+			Plotly.restyle(matrixDiv, {'zmax': edges[0]});
 		}
 	  //if (event.target.id.charAt(0) === "?") { // select network metric
 		//	currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
@@ -246,6 +247,7 @@
 			//toggleGroup(event.target.id);
 		//}
 	  if (event.target.id.charAt(0) === "+") { // select frequency band
+			if (currConn < 6) return // no freq band for cooc.
 			// turn off current heatmap
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
@@ -257,26 +259,26 @@
 			data[0] = convertConn2Heatmap()[0];
 			Plotly.redraw('matrixDiv');
 			toggleGroup(event.target.id);
-			if (currConn > 0){
-				edges.sort((a, b) => b - a)
-				percEdThreshSlider.oninput();
-				edgeSlider.oninput();
-				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
-				Plotly.restyle(matrixDiv, {'zmax': edges[0]});
-			}
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+			edgeSlider.oninput();
+			Plotly.restyle(matrixDiv, {'zmax': edges[0]});
 		}
-	  let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
 	  let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
 	  let meas = measStr[currMetric];
-	  if (currConn == 0){ meas = 'power';}
-	  nv1.document.labels[0].text = connStr[currConn] + ", " + freqList[currFreqId];
+	  nv1.document.labels[0].text = connList[currConn] + ", " + freqList[currFreqId];
+	  for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
+			nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeColormap", EdColormap);
 	  //nv1.updateGLVolume();
 	  nv1.drawScene()
   }
   // Update the current slider value (each time you drag the slider handle)
   edgeSlider.oninput = function () {
+	let scaling = 1;
+	if (edges[0] > 1){ scaling = 1/edges[0]};
 	for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-    nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeScale", this.value*.1)
+    nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeScale", scaling*this.value*.1)
   }
   nodeSlider.oninput = function () {
 	//for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
@@ -327,7 +329,7 @@
   await loadConnMaP()
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");
-  nv1.addLabel("PLV, " + freqList[currFreqId], 
+  nv1.addLabel(connList[currConn] + ", " + freqList[currFreqId], 
 		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPLEFT);
   await nv1.loadVolumes(volumeList1);
@@ -384,9 +386,8 @@
 	};
 	Plotly.newPlot('matrixDiv', data, layout, {responsive: true});
 	matrixDiv.on('plotly_hover', function(data){
-		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
 		let nodeID = data.points[0].pointIndex[0];
-		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connStr[currConn] + ", " + freqList[currFreqId];
+		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connList[currConn] + ", " + freqList[currFreqId];
 		nv1.updateGLVolume();
 	});
 	var clickMode = 0;
@@ -433,8 +434,10 @@
   nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
   Plotly.restyle(matrixDiv, {'zmax': edges[0]});
   var buttons = document.getElementsByClassName("viewBtn");
+  var metricBtnId = [];
   for (let i = 0; i < buttons.length; i++){
 	buttons[i].addEventListener("click", onButtonClick, false);
+	if (buttons[i].id.charAt(0) === "_") metricBtnId.push(buttons[i].id);
   }
   function toggleGroup(id) {
     let buttons = document.getElementsByClassName("viewBtn");
@@ -535,10 +538,12 @@
 		nv1.addMesh(nv1.loadConnectomeAsMesh(newConnectome))
 		nv1.meshes[2].colorbarVisible = false;
 		nv1.setMeshProperty(nv1.meshes[2].id, "nodeColormap", NdColormap)
-		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)
+		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)		
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeScale", edgeSlider.value*.1)
 		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", .01)
+		nv1.setMeshProperty(nv1.meshes[2].id, "edgeMax", edges[0]);
 		nv1.setMeshProperty(nv1.meshes[1].id, "visible", false);
+		edgeSlider.oninput()
 		return ConnectedNodes, ConnectedNodesIdx
 		
 	}
