@@ -43,6 +43,19 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
+          Map Color
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a class="viewBtn dropdown-item-checked" id="!NdYlOrRd">YlOrRd</a>
+          <a class="viewBtn" id="!NdYlGnBu">YlGnBu</a>
+          <a class="viewBtn" id="!NdGreens">Greens</a>
+		  <a class="viewBtn" id="!NdReds">Reds</a>
+		  <a class="viewBtn" id="!NdBlues">Blues</a>
+        </div>
+    </div>
+	<div class="dropdown">
+        <button class="dropbtn">
           Connectivity
           <i class="fa fa-caret-down"></i>
         </button>
@@ -71,6 +84,17 @@
 		  <a class="viewBtn" id="+alpha">alpha</a> 
 		  <a class="viewBtn" id="+beta">beta</a> 
 		  <a class="viewBtn" id="+gamma">gamma</a> 
+        </div>
+    </div>
+	<div class="dropdown">
+        <button class="dropbtn">
+          Nodal measure
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
+		  <a class="viewBtn" id="?CC">clustering coef.</a>
+		  <a class="viewBtn" id="?eigCent">eigenvect. centrality.</a>
         </div>
     </div>
 	<div class="dropdown">
@@ -104,7 +128,7 @@
 	<label for="percEdThreshSlider">Percentage of Edges</label>
     <input type="range" min="1" max="999" value="200" class="slider" id="percEdThreshSlider" style="width:30%"/>
     <label for="nodeSlider">Node Size</label>
-    <input type="range" min="1" max="150" value="15" class="slider" id="nodeSlider" />
+    <input type="range" min="1" max="200" value="100" class="slider" id="nodeSlider" />
 	<label for="NdThreshSlider">Node Threshold</label>
     <input type="range" min="0" max="99" value="0" class="slider" id="NdThreshSlider" />
     <button id="reset">reset</button>
@@ -113,6 +137,8 @@
 </html>
 <script type="module" async>
   import * as niivue from "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.46.0/dist/index.js";
+  let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/plotlyColorscale4niiVue.json", {})
+  let plotlyColorscales = await response.json()
   
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
   const connList = ["spike_cooc", "gamma_cooc", "ripple_cooc", "norm_spike_cooc", "norm_gamma_cooc", "norm_ripple_cooc", "PLV", "coh", "envCorr", "ciPLV", "cicoh"];
@@ -121,11 +147,12 @@
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
   var currConn = 6; // variable with the current connectivity type (connList)
   var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
+  var nodeSize = []; // variable with the node size (to encode nodal measures)
   var edges = []; // variable with the current connectivity graph (3D)
   var edMin = 0; // variable to store minimum edge value to display
   var EdColormap = "Inferno";
-  var NdColormap = "Plasma";
-  var mapColormap = "YlOrRd";
+  var NdColormap = "YlOrRd";
+  
   async function loadConnMaP(uploadData = 'all'){
 		let fname = '';
 		if (currConn > 5){
@@ -139,12 +166,13 @@
 		let measStr = ['strength', 'CC', 'eigCent'];
 		let meas = measStr[currMetric];
 		edges = connectivity.mat;
+		nodeSize = connectivity[meas];
 		if (uploadData === 'edges'){return} // only update Map if asked
 		let currMap = {
 			x: connectivity.t,
 			z: connectivity[meas],
 			type: 'heatmap',
-			colorscale: mapColormap,
+			colorscale: NdColormap,
 			reversescale: true,
 			zmin:0,
 			opacity:1,
@@ -225,6 +253,7 @@
 			
 			currConn = metricBtnId.indexOf(event.target.id);
 			await loadConnMaP()
+			updateNodeSize()
 			bipElec.edges = edges;
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop(); // remove current graph
@@ -240,18 +269,22 @@
 			edgeSlider.oninput();
 			Plotly.restyle(matrixDiv, {'zmax': edges[0]});
 		}
-	  //if (event.target.id.charAt(0) === "?") { // select network metric
-		//	currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
-			//await loadConnMaP()
-			//Plotly.redraw('matrixDiv');
-			//toggleGroup(event.target.id);
-		//}
+	  if (event.target.id.charAt(0) === "?") { // select network metric
+			currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
+			await loadConnMaP()
+			updateNodeSize()
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			edgeSlider.oninput();
+			toggleGroup(event.target.id);
+		}
 	  if (event.target.id.charAt(0) === "+") { // select frequency band
 			if (currConn < 6) return // no freq band for cooc.
 			// turn off current heatmap
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
-			//Plotly.redraw('matrixDiv');
+			updateNodeSize()
 			bipElec.edges = edges;
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
@@ -281,14 +314,15 @@
     nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeScale", scaling*this.value*.1)
   }
   nodeSlider.oninput = function () {
-	//for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-    //nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.1);
-	nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.1);
+	nv1.setMeshProperty(nv1.meshes[0].id, "nodeScale", this.value*.01);
+	for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++){
+		nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeScale", this.value*.01*6);
+	}
   }
   // Here we suppose that the node and edge values are normalised in [0 1]
   NdThreshSlider.oninput = function () {
-	for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
-    nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeMinColor", this.value * .01);
+	for (let idMesh=1; idMesh<nv1.meshes.length;  idMesh++)
+    nv1.setMeshProperty(nv1.meshes[idMesh].id, "nodeMinColor", this.value * .01 * nv1.meshes[idMesh].nodeMaxColor);
   }
   percEdThreshSlider.oninput = function () {
 	edMin = edges[Math.round(this.value*.001*edges.length)];
@@ -332,6 +366,7 @@
   nv1.addLabel(connList[currConn] + ", " + freqList[currFreqId], 
 		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPLEFT);
+  Object.keys(plotlyColorscales).map(function(item) {nv1.addColormap(item, plotlyColorscales[item])})
   await nv1.loadVolumes(volumeList1);
   //nv1.setClipPlane([-0.0, 0, 40]);
   nv1.volumes[0].colorbarVisible = false
@@ -348,15 +383,16 @@
   ]);
   nv1.meshes[0].colorbarVisible = false;
   nv1.opts.showLegend = false;
-  const response = await fetch("https://roehrin.github.io/test/ictal_connectivity/pat_bipelec.jcon", {})
+  response = await fetch("https://roehrin.github.io/test/ictal_connectivity/pat_bipelec.jcon", {})
   const bipElec = await response.json()
   bipElec.edges = edges;
   bipElec.edgeMin = .5;
   bipElec.edgeMax = 1;
   bipElec.edgeColormap = EdColormap;
   bipElec.edgeColormapNegative = '';
+  bipElec.nodeColormap = NdColormap;
+  updateNodeSize()
   nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-  nodeSlider.oninput()
   var nodes = nv1.meshes[1].nodes;
   //nv1.addLabel(nodes[0].names, 
 	//	{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
@@ -433,6 +469,7 @@
   edgeSlider.oninput();
   nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
   Plotly.restyle(matrixDiv, {'zmax': edges[0]});
+  nodeSlider.oninput();
   var buttons = document.getElementsByClassName("viewBtn");
   var metricBtnId = [];
   for (let i = 0; i < buttons.length; i++){
@@ -445,7 +482,7 @@
 	let char03 = id.slice(0,3);
     for (let i = 0; i < buttons.length; i++) {
 	  if (buttons[i].id.charAt(0) !== char0) continue;
-	  if ((char03 === "!Ed" || char03 === "!Map") && (buttons[i].id.slice(0,3) !== char03)) continue;
+	  if ((char03 === "!Ed" || char03 === "!Nd") && (buttons[i].id.slice(0,3) !== char03)) continue;
 	  buttons[i].classList.remove("dropdown-item-checked");
 	  if (buttons[i].id === id)
 		buttons[i].classList.add("dropdown-item-checked");
@@ -540,12 +577,22 @@
 		nv1.setMeshProperty(nv1.meshes[2].id, "nodeColormap", NdColormap)
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeColormap", EdColormap)		
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeScale", edgeSlider.value*.1)
-		nv1.setMeshProperty(nv1.meshes[2].id, "nodeScale", .01)
 		nv1.setMeshProperty(nv1.meshes[2].id, "edgeMax", edges[0]);
 		nv1.setMeshProperty(nv1.meshes[1].id, "visible", false);
 		edgeSlider.oninput()
+		nodeSlider.oninput()
 		return ConnectedNodes, ConnectedNodesIdx
 		
 	}
+	
+	function updateNodeSize(){
+		bipElec.edges = edges;
+		bipElec.nodeMaxColor = Math.max(...connMap[0].z.flat(1));
+		bipElec.nodeMinColor = Math.min(...connMap[0].z.flat(1));
+		bipElec.nodes.Color = nodeSize;
+		bipElec.nodeColormap = NdColormap;
+		bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
+		bipElec.nodeScale = 6;
+    }
 
 </script>
