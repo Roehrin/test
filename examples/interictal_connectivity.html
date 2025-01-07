@@ -92,7 +92,11 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
+		<a class="viewBtn" id="?EI">epileptogenicity index</a>
+		<a class="viewBtn" id="?spike">spike rate</a>
+		<a class="viewBtn" id="?gamma">gamma burst rate</a>
+		<a class="viewBtn" id="?ripple">ripple rate</a>
+          <a class="viewBtn divider dropdown-item-checked" id="?strength">strength</a>
 		  <a class="viewBtn" id="?CC">clustering coef.</a>
 		  <a class="viewBtn" id="?eigCent">eigenvect. centrality.</a>
         </div>
@@ -142,11 +146,12 @@
   
   const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
   const connList = ["spike_cooc", "gamma_cooc", "ripple_cooc", "norm_spike_cooc", "norm_gamma_cooc", "norm_ripple_cooc", "PLV", "coh", "envCorr", "ciPLV", "cicoh"];
+  const measStr = ['EI', 'spike', 'gamma', 'ripple', 'strength', 'CC', 'eigCent'];
   const timeSample = [10, 14.5, 17.5, 20, 25, 30];
   var connMap = []; // variable with the current heatmap
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
   var currConn = 6; // variable with the current connectivity type (connList)
-  var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
+  var currMetric = 4; // variable with the current metric type ([EI, spike, gamma, ripple, strength, clustering coeff., eignvect centrality])
   var nodeSize = []; // variable with the node size (to encode nodal measures)
   var edges = []; // variable with the current connectivity graph (3D)
   var edMin = 0; // variable to store minimum edge value to display
@@ -163,7 +168,7 @@
 		}
 		let response = await fetch(fname, {})
 		let connectivity = await response.json()
-		let measStr = ['strength', 'CC', 'eigCent'];
+		
 		let meas = measStr[currMetric];
 		edges = connectivity.mat;
 		nodeSize = connectivity[meas];
@@ -270,13 +275,17 @@
 			Plotly.restyle(matrixDiv, {'zmax': edges[0]});
 		}
 	  if (event.target.id.charAt(0) === "?") { // select network metric
-			currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
+			currMetric = ['?EI', '?spike', '?gamma', '?ripple', '?strength', '?CC', '?eigCent'].indexOf(event.target.id);
 			await loadConnMaP()
 			updateNodeSize()
+			bipElec.edges = edges;
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			edges.sort((a, b) => b - a)
 			edgeSlider.oninput();
+			percEdThreshSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 			toggleGroup(event.target.id);
 		}
 	  if (event.target.id.charAt(0) === "+") { // select frequency band
@@ -298,14 +307,13 @@
 			edgeSlider.oninput();
 			Plotly.restyle(matrixDiv, {'zmax': edges[0]});
 		}
-	  let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
 	  let meas = measStr[currMetric];
-	  nv1.document.labels[0].text = connList[currConn] + ", " + freqList[currFreqId];
+	  nv1.document.labels[0].text = connList[currConn] +": " + meas + ", " + freqList[currFreqId];
 	  for (let idMesh=0; idMesh<nv1.meshes.length;  idMesh++)
 			nv1.setMeshProperty(nv1.meshes[idMesh].id, "edgeColormap", EdColormap);
 	  //nv1.updateGLVolume();
 	  nv1.drawScene()
-  }
+  } // onButtonClick
   // Update the current slider value (each time you drag the slider handle)
   edgeSlider.oninput = function () {
 	let scaling = 1;
@@ -363,8 +371,11 @@
   await loadConnMaP()
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");
-  nv1.addLabel(connList[currConn] + ", " + freqList[currFreqId], 
-		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+  nv1.addLabel(connList[currConn] + ": " + measStr[currMetric] + ", " + freqList[currFreqId], 
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.LEFT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
+  nv1.addLabel('', 
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.LEFT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPLEFT);
   Object.keys(plotlyColorscales).map(function(item) {nv1.addColormap(item, plotlyColorscales[item])})
   await nv1.loadVolumes(volumeList1);
@@ -423,14 +434,14 @@
 	Plotly.newPlot('matrixDiv', data, layout, {responsive: true});
 	matrixDiv.on('plotly_hover', function(data){
 		let nodeID = data.points[0].pointIndex[0];
-		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connList[currConn] + ", " + freqList[currFreqId];
+		nv1.document.labels[1].text = nodes[nodeID].name;
 		nv1.updateGLVolume();
 	});
 	var clickMode = 0;
 	var clickROI = 0;
 	matrixDiv.on('plotly_click', function(data){
 		let nodeID = data.points[0].pointIndex[0];
-		if (nv1.document.labels[0].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
+		if (nv1.document.labels[1].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
 		clickROI = nodeID;
 		if (clickMode === 0){
 			centerCrosshairOnNode(nodeID);
@@ -591,7 +602,11 @@
 		bipElec.nodeMinColor = Math.min(...connMap[0].z.flat(1));
 		bipElec.nodes.Color = nodeSize;
 		bipElec.nodeColormap = NdColormap;
-		bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
+		if (currMetric > 3){
+			bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
+		} else {
+			bipElec.nodes.Size = nodeSize.map(function (value) { return value/Math.max(...nodeSize)});
+		}
 		bipElec.nodeScale = 6;
     }
 
