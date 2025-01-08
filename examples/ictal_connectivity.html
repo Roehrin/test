@@ -246,6 +246,7 @@
 			currFreqId = freqList.indexOf(event.target.id.substr(1));
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
+			// known issue, this creates an error when the time widows has been updated...
 			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
 			chanAstickLabel()
 			updateNodeSize()
