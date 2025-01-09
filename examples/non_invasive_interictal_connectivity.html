@@ -582,11 +582,7 @@
 		roiNetw.nodeMinColor = Math.min(...connMap[0].z.flat(1));
 		roiNetw.nodes.Color = nodeSize;
 		roiNetw.nodeColormap = NdColormap;
-		if (currMetric > 3){
-			roiNetw.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
-		} else {
-			roiNetw.nodes.Size = nodeSize.map(function (value) { return value/Math.max(...nodeSize)});
-		}
+		roiNetw.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
 		roiNetw.nodeScale = 6;
     }
 
