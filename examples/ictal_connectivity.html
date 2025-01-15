@@ -452,10 +452,13 @@
   }
   
   var nv1 = new niivue.Niivue(opts);
-  nv1.attachTo("gl1");
+  nv1.attachTo("gl1");	
   nv1.addLabel("PLV: strength,\n" + freqList[currFreqId], 
-		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.RIGHT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
-		undefined, niivue.LabelAnchorPoint.TOPLEFT);	
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.LEFT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
+  nv1.addLabel('', 
+		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.LEFT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
+		undefined, niivue.LabelAnchorPoint.TOPLEFT);		
   await nv1.loadVolumes(volumeList1);
   //nv1.setClipPlane([-0.0, 0, 40]);
   nv1.volumes[0].colorbarVisible = false
@@ -530,7 +533,7 @@
 		let measStr = ['strength', 'CC', 'centrality'];
 		let nodeID = data.points[0].curveNumber-1;
 		if (nodeID === -1) nodeID = data.points[0].pointIndex[0]; // clicked on heatmap not traces
-		nv1.document.labels[0].text = nodes[nodeID].name + ", " + connStr[currConn] + ", " + measStr[currMetric] + ", " + freqList[currFreqId];
+		nv1.document.labels[1].text = nodes[nodeID].name;
 		nv1.updateGLVolume();
 	});
 	var clickMode = 0;
@@ -538,7 +541,7 @@
 	seizureTraces.on('plotly_click', function(data){
 		let nodeID = data.points[0].curveNumber-1;
 		if (nodeID === -1) nodeID = data.points[0].pointIndex[0]; // clicked on heatmap not traces
-		if (nv1.document.labels[0].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
+		if (nv1.document.labels[1].text.includes(nodes[clickROI].name)) clickMode++; // if click on the same ROI, then change behaviour
 		clickROI = nodeID;
 		if (clickMode === 0){
 			centerCrosshairOnNode(nodeID);
