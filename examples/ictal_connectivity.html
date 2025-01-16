@@ -56,12 +56,21 @@
     </div>
 	<div class="dropdown">
         <button class="dropbtn">
+          Seizure
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+			<a class="viewBtn" id="]sz1">Seizure 1</a> 
+          <a class="viewBtn dropdown-item-checked" id="]sz2">Seizure 2</a> 
+        </div>
+    </div>
+	<div class="dropdown">
+        <button class="dropbtn">
           Connectivity
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-			<a class="viewBtn" id="_Pow">Power</a> 
-          <a class="viewBtn divider dropdown-item-checked" id="_PLV">PLV</a> 
+          <a class="viewBtn dropdown-item-checked" id="_PLV">PLV</a> 
           <a class="viewBtn" id="_coh">coherence</a> 
 		  <a class="viewBtn" id="_env">envelope correlation</a>
 		  <a class="viewBtn divider" id="_ciPLV">corrected imaginary PLV</a> 
@@ -87,7 +96,11 @@
           <i class="fa fa-caret-down"></i>
         </button>
         <div class="dropdown-content">
-          <a class="viewBtn dropdown-item-checked" id="?strength">strength</a>
+		<a class="viewBtn" id="?EI">epileptogenicity index</a>
+		<a class="viewBtn" id="?spike">spike rate</a>
+		<a class="viewBtn" id="?gamma">gamma burst rate</a>
+		<a class="viewBtn" id="?ripple">ripple rate</a>
+          <a class="viewBtn divider dropdown-item-checked" id="?strength">strength</a>
 		  <a class="viewBtn" id="?CC">clustering coef.</a>
 		  <a class="viewBtn" id="?eigCent">eigenvect. centrality.</a>
         </div>
@@ -122,9 +135,9 @@
 	</div>
   <footer>
 	<label for="edgeSlider">Edge Size</label>
-    <input type="range" min="1" max="100" value="10" class="slider" id="edgeSlider" />
+    <input type="range" min="0" max="100" value="10" class="slider" id="edgeSlider" />
 	<label for="percEdThreshSlider">Percentage of Edges</label>
-    <input type="range" min="1" max="999" value="50" class="slider" id="percEdThreshSlider" style="width:20%"/>
+    <input type="range" min="1" max="999" value="20" class="slider" id="percEdThreshSlider" style="width:20%"/>
     <label for="nodeSlider">Node Size</label>
     <input type="range" min="1" max="200" value="100" class="slider" id="nodeSlider" />
   </footer>
@@ -210,8 +223,29 @@
 			return
 		}
 	document.body.style.cursor = 'wait'	
+	if (event.target.id.charAt(0) === "]") { // select connectivity type
+			currSz = event.target.id.substr(1)
+			var fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure" + currSz.slice(2,3) + "ds.eeg";
+			var hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
+			var iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
+			connMap.length = 0; // clear existing array
+			await loadConnMaP()
+			connMap.push(...iEEGdata)
+			Plotly.redraw('seizureTraces');
+			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
+			chanAstickLabel()
+			updateNodeSize()
+			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
+			nv1.meshes.pop();
+			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
+			toggleGroup(event.target.id);
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			edgeSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
+		}
 	if (event.target.id.charAt(0) === "_") { // select connectivity type
-			currConn = ["_Pow", "_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
+			currConn = ["_PLV", "_coh", "_env" , "_ciPLV", "_cicoh"].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
@@ -221,15 +255,13 @@
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
 			toggleGroup(event.target.id);
-			if (currConn > 0){
-				edges.sort((a, b) => b - a)
-				percEdThreshSlider.oninput();
-				edgeSlider.oninput();
-				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
-			}
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			edgeSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 		}
 	  if (event.target.id.charAt(0) === "?") { // select network metric
-			currMetric = ["?strength", "?CC", "?eigCent"].indexOf(event.target.id);
+			currMetric = currMetric = ['?EI', '?spike', '?gamma', '?ripple', '?strength', '?CC', '?eigCent'].indexOf(event.target.id);
 			await loadConnMaP()
 			Plotly.redraw('seizureTraces');
 			Plotly.restyle(seizureTraces, {'colorscale': mapColormap, 'reversescale': mapColormap != 'Reds'}, 0);
@@ -253,20 +285,17 @@
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-			
 			toggleGroup(event.target.id);
-			if (currConn > 0){
-				edges.sort((a, b) => b - a)
-				percEdThreshSlider.oninput();
-				edgeSlider.oninput();
-				nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
-			}
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			edgeSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 		}
-	  let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
-	  let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
+	  //let connList = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+	  //let measStr = ['strength', 'clustering coef.', 'eigenvect. centrality'];
+	  edgeSlider.oninput();
 	  let meas = measStr[currMetric];
-	  if (currConn == 0){ meas = 'power';}
-	  nv1.document.labels[0].text = connStr[currConn] + ": " + meas + ", " + freqList[currFreqId];
+	  nv1.document.labels[0].text = updateLabel();
 	  //nv1.updateGLVolume();
 	  nv1.drawScene()
 	  document.body.style.cursor = 'default'
@@ -307,24 +336,18 @@
 	updateNodeSize()
 	nv1.meshes.pop();
 	nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-	if (currConn > 0){
-		edges.sort((a, b) => b - a)
-		percEdThreshSlider.oninput();
-		edgeSlider.oninput();
-		nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
-	}
+	edges.sort((a, b) => b - a)
+	percEdThreshSlider.oninput();
+	edgeSlider.oninput();
+	nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 	document.body.style.cursor = 'default';
   }
   
-  const fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure1ds.eeg";
-  const hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
-  const iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
-  const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-  
   var currFreqId = 0; // variable with the current frequency index (linked to freqList)
-  var currConn = 1; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
-  var currMetric = 0; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
+  var currConn = 0; // variable with the current connectivity type ([pow, PLV, coh. envCorr])
+  var currMetric = 4; // variable with the current metric type ([pow, strength, clustering coeff., eignvect centrality])
   var currWindow = 0; // variable with the current time window of the connectivity graph (3D)
+  var currSz = 'sz2';
   var edMin = 0; // variable to store minimum edge value to display
   var nodeSize = []; // variable with the node size (to encode nodal measures)
   var edges = []; // variable with the current connectivity graph (3D)
@@ -333,22 +356,36 @@
   var EdColormap = "Inferno";
   var mapColormap = "YlOrRd";
   
+  var fileUrl = "https://roehrin.github.io/test/ictal_connectivity/seizure" + currSz.slice(2,3) + "ds.eeg";
+  var hdr = await vhdrReader.readVHDRfromURL(fileUrl.replace(".eeg", ".vhdr"));
+  var iEEGdata = await vhdrReader.readBrainvisionEEGData(fileUrl,hdr, 0.0064/2, true);
+  const freqList = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+  const connList = ["PLV", "coh", "envCorr", "ciPLV", "cicoh"];
+  const measStr = ['EI', 'spike', 'gamma', 'ripple', 'strength', 'CC', 'eigCent'];
+   
+  function updateLabel(){
+	var lblTmplt = `${currSz}, ${connList[currConn]}: ${measStr[currMetric]}, ${freqList[currFreqId]}`;
+	return lblTmplt
+  }
+  
   async function loadConnMaP(){
-		let response = await fetch("https://roehrin.github.io/test/ictal_connectivity/connectivity_" + freqList[currFreqId] + ".json", {})
+		let fname = "https://roehrin.github.io/test/ictal_connectivity/connectivity_" + currSz + "_" + connList[currConn] + 
+							"_" + freqList[currFreqId] + ".json"
+		let response = await fetch(fname, {})
 		let connectivity = await response.json()
-		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
-		let measStr = ['strength', 'CC', 'eigCent'];
+		//let connList = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+		//let measStr = ['strength', 'CC', 'eigCent'];
 		let meas = measStr[currMetric];
-		if (currConn == 0){  // no connectivity matrix only power
-			meas = "pow";
-			edges = connectivity['PLV'].mat[currWindow].map(function(val) {return 0}); // if edges = [], 3D view not displayed...
-		} else {
-			edges = connectivity[connStr[currConn]].mat[currWindow];
-		}
-		nodeSize = connectivity[connStr[currConn]][meas].map(function(item) {return item[currWindow]});
+		//if (currConn == 0){  // no connectivity matrix only power
+		//	meas = "pow";
+		//	edges = connectivity.mat[currWindow].map(function(val) {return 0}); // if edges = [], 3D view not displayed...
+		//} else {
+			edges = connectivity.mat[currWindow];
+		//}
+		nodeSize = connectivity[meas].map(function(item) {return item[currWindow]});
 		let currMap = {
-			x: connectivity[connStr[currConn]].t,
-			z: connectivity[connStr[currConn]][meas],
+			x: connectivity.t,
+			z: connectivity[meas],
 			type: 'heatmap',
 			colorscale: mapColormap,
 			reversescale: true,
@@ -356,7 +393,7 @@
 			opacity:1,
 			showscale: true,
 		};
-		timeSample = connectivity[connStr[currConn]].t;
+		timeSample = connectivity.t;
 		connMap[0]  = currMap;
   }
   
@@ -453,7 +490,7 @@
   
   var nv1 = new niivue.Niivue(opts);
   nv1.attachTo("gl1");	
-  nv1.addLabel("PLV: strength,\n" + freqList[currFreqId], 
+  nv1.addLabel(updateLabel(), 
 		{ textScale: .75, textAlignment: niivue.LabelTextAlignment.LEFT, textColor: [1.0, 1.0, 1.0, 1.0], backgroundColor: [0.2, 0.2, 0.2, 0.2]}, 
 		undefined, niivue.LabelAnchorPoint.TOPRIGHT);
   nv1.addLabel('', 
@@ -501,7 +538,11 @@
 	bipElec.nodeMinColor = Math.min(...connMap[0].z.flat(1));
 	bipElec.nodes.Color = nodeSize;
 	bipElec.nodeColormap = mapColormap;
-	bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)});; // value < 1 so pow helps visually 
+	if (currMetric > 3){
+		bipElec.nodes.Size = nodeSize.map(function (value) { return Math.pow(value/Math.max(...nodeSize),2)}); // value < 1 so pow helps visually 
+	} else {
+		bipElec.nodes.Size = nodeSize.map(function (value) { return value/Math.max(...nodeSize)});
+	}
 	bipElec.nodeScale = 6;
   }
   function toggleGroup(id) {
@@ -529,8 +570,8 @@
 		})
 	}
 	seizureTraces.on('plotly_hover', function(data){
-		let connStr = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
-		let measStr = ['strength', 'CC', 'centrality'];
+		//let connList = ['POW', 'PLV', 'coh', 'envCorr', "ciPLV", "cicoh"];
+		//let measStr = ['strength', 'CC', 'centrality'];
 		let nodeID = data.points[0].curveNumber-1;
 		if (nodeID === -1) nodeID = data.points[0].pointIndex[0]; // clicked on heatmap not traces
 		nv1.document.labels[1].text = nodes[nodeID].name;
