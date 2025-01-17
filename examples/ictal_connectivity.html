@@ -270,7 +270,10 @@
 			if (nv1.meshes.length > 2) nv1.meshes.pop(); // close any open 'Neighbour' mesh
 			nv1.meshes.pop();
 			nv1.addMesh(nv1.loadConnectomeAsMesh(bipElec))
-			
+			edges.sort((a, b) => b - a)
+			percEdThreshSlider.oninput();
+			edgeSlider.oninput();
+			nv1.setMeshProperty(nv1.meshes[1].id, "edgeMax", edges[0]);
 			toggleGroup(event.target.id);
 		}
 	  if (event.target.id.charAt(0) === "+") { // select frequency band
