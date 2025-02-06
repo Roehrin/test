@@ -13,21 +13,19 @@
   </style>
 </head>
 
-<body style="font-family: sans-serif">
-
+<body style="font-family: sans-serif; margin:0px">
+  <header style="background:#96004B; margin:0px">
+	<img src="https://www.unige.ch/cdn/themes/unige2016/img/unige-logo.svg">
+  </header>
   <section>
-    <h1>NiiVue Demos for EEG, iEEG and source space connectivity</h1>
+    <h1>Collections of interactive web applications for the visualisation, teaching and investigation of advanced scalp EEG and intracranial EEG analysis.</h1>
     <p>
-      <a href="https://github.com/niivue/niivue">NiiVue</a> is a web-based visualisation tool for neuroimaging that can run on any operating system and any web device (phone, tablet, computer).
+      Welcome to the prototype of a future interactive learning platform dedicated to advanced EEG analysis. Here, you will find a series of web applications designed to help you intuitively explore key concepts such as electrical source imaging (ESI) and functional connectivity. Developed for students and researchers, this open-access resource aims to make complex neuroimaging methods more accessible. The applications are built using <a href="https://github.com/niivue/niivue">NiiVue</a> and <a href="https://plotly.com/javascript/">Plotly</a> and were developed by Dr Nicolas Roehri at the University of Geneva, Faculty of Medecine, EEG and Epilepsy Unit.
     </p>
-    <p>
-      This page is to test whether one can use this tool for visualising EEG, iEEG and source-based connectivity interactively on any web browser.
-    </p>
-	</section>
-	<section> <h2>Demos</h2>
-	</section>
-	<section> <h3>Inverse Solution</h3>
-	</section>
+  </section>
+  <section>
+	<h2>Demos</h2>
+	<h3>Inverse Solution</h3>
 	<section>
     <a href="./examples/EEG_mesh_with_topo.html" target="_blank" rel="noopener noreferrer">Show topography of different brain sources.</a>
 	</section>
@@ -40,8 +38,7 @@
 	<section>
     <a href="./examples/IED_localisation_and_regularisation.html" target="_blank" rel="noopener noreferrer">Illustraction of the impact of the regularisation parameter lambda when localising an interictal epileptiform discharge.</a>
 	</section>
-	<section> <h3>Connectivity</h3>
-	</section>
+	<h3>Functional Connectivity</h3>
 	<section>
     <a href="./examples/ictal_connectivity.html" target="_blank" rel="noopener noreferrer">Epileptic seizure recorded with iEEG, displayed along connectivity/network measure.</a>
 	</section>
@@ -54,24 +51,14 @@
 	<section>
 	<a href="./examples/network_data_on_mesh.html" target="_blank" rel="noopener noreferrer">Display on a 3D mesh the results of a network analysis from the four first canonical frequency bands.</a>
 	</section>
+	<h3>Structural Connectivity</h3>
 	<section>
-    <a href="./examples/interactive_ROI_network.html" target="_blank" rel="noopener noreferrer">Interactive brain network with user-adjustable edge and node properties.</a>
+    <a href="./examples/interactive_ROI_network.html" target="_blank" rel="noopener noreferrer">Interactive structural brain network with user-adjustable edge and node properties.</a>
 	</section>
 	<section>
     <a href="./examples/matrix_and_3D_network.html" target="_blank" rel="noopener noreferrer">Same as above but displayed along a connectivity matrix.</a>
 	</section>
-	<section> <h2>Tests</h2>
-	</section>
-    <section>
-    <a href="./examples/test_seeg_network.html" target="_blank" rel="noopener noreferrer">SEEG network on MRI</a>
-	</section>
-	</section>
-    <section>
-    <a href="./examples/load_different_data.html" target="_blank" rel="noopener noreferrer">Display and load different types of data</a>
-	</section>
-	<section>
-    <a href="./examples/learn_your_atlases.html" target="_blank" rel="noopener noreferrer">Display different atlases and name of parcels (bugging)</a>
-	</section>
+  </section>
 </body>
 
 </html>
