@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pearson correlation of two noisy signals</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .slider {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pearson correlation of two noisy signals.</h1>
+
+    <div>
+        <label for="frequency">Frequency of Sine Wave 2:</label>
+        <input type="range" id="frequency" class="slider" min="1" max="25" value="10">
+        <span id="freqValue">3 Hz</span>
+    </div>
+
+    <div>
+        <label for="phase">Phase Shift of Sine Wave 2:</label>
+        <input type="range" id="phase" class="slider" min="0" max="360" value="0" step="5">
+        <span id="phaseValue">0 rad</span>
+    </div>
+
+    <div>
+        <label for="noiseLevel">Noise Level:</label>
+        <input type="range" id="noiseLevel" class="slider" min="0" max=".5" value="0.1" step="0.01">
+        <span id="noiseValue">0.1</span>
+    </div>
+
+    <div id="plot" style="width:100%;height:600px;"></div>
+
+    <script type="module" async>
+		import {computeFFT, inverseFFT, hilbertTransform, analyticSignal, pearsonCorrelation} from 'https://roehrin.github.io/test/js-scripts/simpleSignalProcessing.js';
+        
+        const sampleRate = 512;
+		const freq1 = 10;
+		const phase1 = 0;
+		var freq2 = parseFloat(document.getElementById("frequency").value);
+		var phase2 = 2*Math.PI/360*parseFloat(document.getElementById("phase").value);
+		var noiseLvl = parseFloat(document.getElementById("noiseLevel").value);
+        const time = Array.from({ length: sampleRate }, (_, i) => i / sampleRate);
+		
+		const w1 = .65;
+		const w2 = .25;
+		const w3 = .05;
+		const wgap = .025;
+        
+		// Generate noise
+		var noise1 = generateGaussianNoise(noiseLvl); // Noise for first channel
+		var noise2 = generateGaussianNoise(noiseLvl); // Second sine wave
+		
+		// Generate sine waves
+		var sineWave1 = generateSineWave(freq1, phase1, noise1); // First sine wave
+		var sineWave2 = generateSineWave(freq2, phase2, noise2); // Second sine wave
+
+		// Compute FFT
+		var fftResult1 = computeFFT(sineWave1, sampleRate);
+		var fftResult2 = computeFFT(sineWave2, sampleRate);
+		
+		function generateGaussianNoise(noiseLvl){
+			const noise = [];
+			for (let i = 0; i < time.length; i++) {
+				const u1 = Math.random();
+				const u2 = Math.random();
+				const z0 = noiseLvl*Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2); // Generate standard normal variable
+				noise.push(z0); // Scale and shift to desired mean and standard deviation
+			}
+			return noise
+		}
+		
+        function generateSineWave(frequency, phase, noise) {
+            return time.map((t, index) => Math.sin(2 * Math.PI * frequency * t + phase) + noise[index]);
+        }
+		
+		frequency.oninput = function () {
+			freq2 = parseFloat(document.getElementById("frequency").value);
+			document.getElementById("freqValue").textContent = freq2 + " Hz";
+			sineWave2 = generateSineWave(freq2, phase2, noise2);
+			fftResult2 = computeFFT(sineWave2, sampleRate);
+			updatePlots()
+		}
+		
+		phase.oninput = function () {
+			phase2 = 2*Math.PI/360*parseFloat(document.getElementById("phase").value);
+			document.getElementById("phaseValue").textContent = phase2.toFixed(2) + " rad";
+			sineWave2 = generateSineWave(freq2, phase2, noise2);
+			fftResult2 = computeFFT(sineWave2, sampleRate);
+			updatePlots()
+		}
+		
+		noiseLevel.oninput = function () {
+			noiseLvl = parseFloat(document.getElementById("noiseLevel").value);
+			document.getElementById("noiseValue").textContent = noiseLvl.toFixed(2);
+			
+			noise1 = generateGaussianNoise(noiseLvl);
+			sineWave1 = generateSineWave(freq1, phase1, noise1);
+			fftResult2 = computeFFT(sineWave2, sampleRate);
+			noise2 = generateGaussianNoise(noiseLvl);
+			sineWave2 = generateSineWave(freq2, phase2, noise2);
+			fftResult2 = computeFFT(sineWave2, sampleRate);
+			updatePlots()
+		}
+		
+
+        function updatePlots() {        
+            
+			const correlation = pearsonCorrelation(sineWave1, sineWave2);
+			
+            // Create traces for time domain signals
+            const timeTrace1 = {
+                x: time,
+                y: sineWave1,
+                mode: 'lines',
+				type: 'scatter',
+                name: 'Sine Wave 1',
+                line: { color: 'black' }
+            };
+
+            const timeTrace2 = {
+                x: time,
+                y: sineWave2,
+                mode: 'lines',
+                name: 'Sine Wave 2',
+				type: 'scatter',
+                line: { color: 'blue',dash: 'dashdot'}
+            };
+
+            // Create traces for frequency domain signals
+            const freqTrace1 = {
+                x: fftResult1.frequencies,
+                y: fftResult1.magnitudes,
+				xaxis: 'x2',
+				yaxis: 'y2',
+                mode: 'lines',
+				type: 'scatter',
+                name: 'FFT of Sine Wave 1',
+                line: { color: 'black' }
+            };
+
+            const freqTrace2 = {
+                x: fftResult2.frequencies,
+                y: fftResult2.magnitudes,
+				xaxis: 'x2',
+				yaxis: 'y2',
+                mode: 'lines',
+				type: 'scatter',
+                name: 'FFT of Sine Wave 2',
+                line: { color: 'blue', dash: 'dashdot'}
+            };
+
+            // Create scatter plot trace
+            const scatterTrace = {
+                x: sineWave1,
+                y: sineWave2,
+				xaxis: 'x3',
+				yaxis: 'y3',
+                mode: 'markers',
+                name: 'Scatter Plot',
+				type: 'scatter',
+                marker: { color: 'black' }
+            };
+			
+			// Create bar plot for correlation
+			const barPlot = {
+				x: ['corr.'],
+				y: [correlation],
+				type: 'bar',
+				xaxis: 'x4',
+				yaxis: 'y4',
+				name: 'Bar Plot',
+			};
+			
+            // Define subplots layout
+            const layout = {
+                title: 'Sine Waves and Their Fourier Transforms',
+                //grid: { rows: subplotRows, columns: subplotCols, pattern: 'independent' },
+                xaxis: { title: 'Time (s)', domain: [0, w1], anchor: 'y1', font: { size: 18 }},
+                yaxis: { title: 'Amplitude', anchor: 'x1', range: [-2, 2]},
+				xaxis2: { title: 'Frequency (Hz)', domain: [w1+wgap, w1+w2], anchor: 'y2', range: [0, 30]},
+                yaxis2: { title: 'Magnitude', domain: [0, .45], anchor: 'x2', range: [0, 260]},
+				xaxis3: { title: 'Sine Wave 1 Amplitude', side: 'top', domain: [w1+wgap, w1+w2], anchor: 'y3', range: [-2, 2]},
+                yaxis3: { title: 'Sine Wave 2 Amplitude', domain: [.5, 1], anchor: 'x3', range: [-2, 2]},
+				xaxis4: { domain: [w1+w2+wgap, 1], anchor: 'y4'},
+                yaxis4: { title: 'correlation', side: 'right', domain: [0, 1], anchor: 'x4', range: [-1.2, 1.2]},
+                showlegend: true,
+				legend: {x: 0, xanchor: 'left', y: 1, orientation: "h", font: { size: 16 }}
+            };
+
+            // Combine all traces into a single data array
+            const combinedData = [
+                timeTrace1,
+                timeTrace2,
+                freqTrace1,
+                freqTrace2,
+                scatterTrace,
+				barPlot
+            ];
+
+            // Update the plot
+            Plotly.newPlot('plot', combinedData, layout, {responsive: true});
+        }
+
+        // Initial plot
+        updatePlots();
+    </script>
+</body>
+</html>
