@@ -39,7 +39,7 @@ function inverseFFT(real, imag) {
 // Compute Hilbert Transform using FFT and IFT
 function hilbertTransform(signal, sampleRate) {
     let fftResults = computeFFT(signal, sampleRate);
-    let N = real.length;
+    let N = signal.length;
 
     // Zero out negative frequencies and double positive ones (analytic signal)
     let hilbertImag = new Array(N).fill(0);
@@ -52,7 +52,7 @@ function hilbertTransform(signal, sampleRate) {
 
 function analyticSignal(signal, sampleRate) {
     let fftResults = computeFFT(signal, sampleRate);
-    let N = real.length;
+    let N = signal.length;
 
     let halfN = Math.floor(N / 2); // Integer division
     let isOdd = N % 2 !== 0;
