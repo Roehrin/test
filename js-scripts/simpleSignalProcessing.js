@@ -38,20 +38,20 @@ function inverseFFT(real, imag) {
 
 // Compute Hilbert Transform using FFT and IFT
 function hilbertTransform(signal, sampleRate) {
-    let [, , real, imag] = computeFFT(signal, sampleRate);
+    let fftResults = computeFFT(signal, sampleRate);
     let N = real.length;
 
     // Zero out negative frequencies and double positive ones (analytic signal)
     let hilbertImag = new Array(N).fill(0);
     for (let k = 1; k < N / 2; k++) {
-        hilbertImag[k] = imag[k] * 2;
+        hilbertImag[k] = fftResults.imag[k] * 2;
     }
 
     return inverseFFT(new Array(N).fill(0), hilbertImag); // Return only the imaginary part
 }
 
 function analyticSignal(signal, sampleRate) {
-    let [, , real, imag] = computeFFT(signal, sampleRate);
+    let fftResults = computeFFT(signal, sampleRate);
     let N = real.length;
 
     let halfN = Math.floor(N / 2); // Integer division
@@ -59,21 +59,21 @@ function analyticSignal(signal, sampleRate) {
 
     // Apply Hilbert Transform in frequency domain
     for (let k = 1; k < halfN; k++) {
-        real[k] *= 2;
-        imag[k] *= 2;
+        fftResults.real[k] *= 2;
+        fftResults.imag[k] *= 2;
     }
 
     if (!isOdd) {
-        real[halfN] *= 2;  // Double the Nyquist frequency for even N
-        imag[halfN] *= 2;
+        fftResults.real[halfN] *= 2;  // Double the Nyquist frequency for even N
+        fftResults.imag[halfN] *= 2;
     }
 
     for (let k = halfN + 1; k < N; k++) {
-        real[k] = 0;
-        imag[k] = 0;
+        fftResults.real[k] = 0;
+        fftResults.imag[k] = 0;
     }
 
-    let hilbertImag = inverseFFT(new Array(N).fill(0), imag); // Compute Hilbert transform
+    let hilbertImag = inverseFFT(new Array(N).fill(0), fftResults.imag); // Compute Hilbert transform
     return signal.map((val, i) => [val, hilbertImag[i]]); // (Real part, Imaginary part)
 }
 
