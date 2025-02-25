@@ -77,5 +77,18 @@ function analyticSignal(signal, sampleRate) {
     return signal.map((val, i) => [val, hilbertImag[i]]); // (Real part, Imaginary part)
 }
 
+function pearsonCorrelation(x, y) {
+	let n = x.length;
+	let sumX = x.reduce((a, b) => a + b, 0);
+	let sumY = y.reduce((a, b) => a + b, 0);
+	let sumXY = x.map((xi, i) => xi * y[i]).reduce((a, b) => a + b, 0);
+	let sumX2 = x.map(xi => xi * xi).reduce((a, b) => a + b, 0);
+	let sumY2 = y.map(yi => yi * yi).reduce((a, b) => a + b, 0);
+
+	let numerator = (n * sumXY) - (sumX * sumY);
+	let denominator = Math.sqrt((n * sumX2 - sumX ** 2) * (n * sumY2 - sumY ** 2));
+	return (denominator === 0) ? 0 : (numerator / denominator);
+}
+
 // Export functions for use in another script
-export { computeFFT, inverseFFT, hilbertTransform, analyticSignal};
+export { computeFFT, inverseFFT, hilbertTransform, analyticSignal, pearsonCorrelation};
