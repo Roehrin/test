@@ -107,7 +107,13 @@
 
         function updatePlots() {        
             
-			const correlation = pearsonCorrelation(sineWave1, sineWave2);
+			const { correlation, slope, intercept } = pearsonCorrelation(sineWave1, sineWave2);
+			
+			// Generate regression line points
+			let xMin = 1.05*Math.min(...sineWave1);
+			let xMax = 1.05*Math.max(...sineWave1);
+			let regressionLineX = [xMin, xMax];
+			let regressionLineY = [slope * xMin + intercept, slope * xMax + intercept];
 			
             // Create traces for time domain signals
             const timeTrace1 = {
@@ -186,6 +192,20 @@
                 marker: { color: 'black' }
             };
 			
+			
+
+			// Add regression line to scatter plot
+			let regressionTrace = {
+				x: regressionLineX,
+				y: regressionLineY,
+				mode: 'lines',
+				type: 'scatter',
+				xaxis: 'x4',
+				yaxis: 'y4',
+				name: `Linear Regression (r = ${correlation.toFixed(2)})`,
+				line: { color: 'red', width: 2, dash: 'solid' }
+			};
+			
 			// Create bar plot for correlation
 			const barPlot = {
 				x: ['correlation'],
@@ -225,6 +245,7 @@
 				phaseTrace1,
 				phaseTrace2,
                 scatterTrace,
+				regressionTrace,
 				barPlot
             ];
 
@@ -234,7 +255,7 @@
 
         // Initial plot
         updatePlots();
-		
+				
     </script>
 </body>
 </html>

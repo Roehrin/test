@@ -79,7 +79,7 @@ function pearsonCorrelation(x, y) {
 	let correlation = (denominator === 0) ? 0 : (numerator / denominator);
 	
 	// Compute Linear Regression inside the same function
-    let slope = numerator / (n * sumXX - sumX * sumX);
+    let slope = numerator / (n * sumX2 - sumX ** 2);
     let intercept = (sumY - slope * sumX) / n;
 
     return { correlation, slope, intercept };
