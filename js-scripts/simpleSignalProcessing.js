@@ -76,7 +76,13 @@ function pearsonCorrelation(x, y) {
 
 	let numerator = (n * sumXY) - (sumX * sumY);
 	let denominator = Math.sqrt((n * sumX2 - sumX ** 2) * (n * sumY2 - sumY ** 2));
-	return (denominator === 0) ? 0 : (numerator / denominator);
+	let correlation (denominator === 0) ? 0 : (numerator / denominator);
+	
+	// Compute Linear Regression inside the same function
+    let slope = numerator / (n * sumXX - sumX * sumX);
+    let intercept = (sumY - slope * sumX) / n;
+
+    return { correlation, slope, intercept };
 }
 
 function generateGaussianNoise(noiseLvl, length){
@@ -91,4 +97,4 @@ function generateGaussianNoise(noiseLvl, length){
 }
 
 // Export functions for use in another script
-export { computeFFT, inverseFFT, analyticSignal, pearsonCorrelation, generateGaussianNoise};
+export { computeDFT, inverseDFT, analyticSignal, pearsonCorrelation, generateGaussianNoise};
