@@ -1,11 +1,14 @@
 // simpleSignalProcessing.js
 
-// Compute FFT using Discrete Fourier Transform (DFT)
-function computeFFT(signal, sampleRate) {
+// Compute Discrete Fourier Transform (DFT)
+function computeDFT(signal, sampleRate) {
     let N = signal.length;
     let real = new Array(N).fill(0);
     let imag = new Array(N).fill(0);
-    let frequencies = Array.from({ length: N / 2 }, (_, i) => (i * sampleRate) / N);
+    
+    // Handle odd N for frequency array indexing
+    let halfN = Math.floor(N / 2);
+    let frequencies = Array.from({ length: halfN + 1 }, (_, i) => (i * sampleRate) / N);
 
     for (let k = 0; k < N; k++) {
         for (let n = 0; n < N; n++) {
@@ -20,8 +23,8 @@ function computeFFT(signal, sampleRate) {
     return { frequencies, magnitudes, real, imag };
 }
 
-// Compute Inverse FFT (IFT)
-function inverseFFT(real, imag) {
+// Compute Inverse DFT (IDFT)
+function inverseDFT(real, imag) {
     let N = real.length;
     let signal = new Array(N).fill(0);
 
@@ -34,20 +37,6 @@ function inverseFFT(real, imag) {
     }
 
     return signal;
-}
-
-// Compute Hilbert Transform using FFT and IFT
-function hilbertTransform(signal, sampleRate) {
-    let fftResults = computeFFT(signal, sampleRate);
-    let N = signal.length;
-
-    // Zero out negative frequencies and double positive ones (analytic signal)
-    let hilbertImag = new Array(N).fill(0);
-    for (let k = 1; k < N / 2; k++) {
-        hilbertImag[k] = fftResults.imag[k] * 2;
-    }
-
-    return inverseFFT(new Array(N).fill(0), hilbertImag); // Return only the imaginary part
 }
 
 function analyticSignal(signal, sampleRate) {
@@ -91,4 +80,4 @@ function pearsonCorrelation(x, y) {
 }
 
 // Export functions for use in another script
-export { computeFFT, inverseFFT, hilbertTransform, analyticSignal, pearsonCorrelation};
+export { computeFFT, inverseFFT, analyticSignal, pearsonCorrelation};
