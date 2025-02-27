@@ -39,31 +39,52 @@ function inverseDFT(real, imag) {
 	return signal;
 }
 
-function analyticSignal(signal, sampleRate) {
-	let dftResults = computeDFT(signal, sampleRate);
+function analyticSignal(signal) {
 	let N = signal.length;
+	let real = new Array(N).fill(0);
+	let imag = new Array(N).fill(0);
 
-	let halfN = Math.floor(N / 2); // Integer division
-	let isOdd = N % 2 !== 0;
-
-	// Apply Hilbert Transform in frequency domain
-	for (let k = 1; k < halfN; k++) {
-		dftResults.real[k] *= 2;
-		dftResults.imag[k] *= 2;
+	// Compute the full DFT (Discrete Fourier Transform)
+	for (let k = 0; k < N; k++) {
+		for (let n = 0; n < N; n++) {
+			let angle = (-2 * Math.PI * k * n) / N;
+			real[k] += signal[n] * Math.cos(angle);
+			imag[k] += signal[n] * Math.sin(angle);
+		}
 	}
 
-	if (!isOdd) {
-		dftResults.real[halfN] *= 2;  // Double the Nyquist frequency for even N
-		dftResults.imag[halfN] *= 2;
+	// Apply Hilbert transform filter in frequency domain
+	let h = new Array(N).fill(0);
+	h[0] = 1; // DC remains unchanged
+	if (N % 2 === 0) {
+		h[N / 2] = 1; // Nyquist frequency (only for even N)
+	}
+	for (let i = 1; i < Math.floor(N / 2); i++) {
+		h[i] = 2; // Double positive frequencies
 	}
 
-	for (let k = halfN + 1; k < N; k++) {
-		dftResults.real[k] = 0;
-		dftResults.imag[k] = 0;
+	// Multiply FFT result by the Hilbert filter
+	for (let i = 0; i < N; i++) {
+		real[i] *= h[i];
+		imag[i] *= h[i];
 	}
 
-	let hilbertImag = inverseFFT(new Array(N).fill(0), dftResults.imag); // Compute Hilbert transform
-	return signal.map((val, i) => [val, hilbertImag[i]]); // (Real part, Imaginary part)
+	// Compute the inverse DFT (IDFT) to get the analytic signal
+	let analyticReal = new Array(N).fill(0);
+	let analyticImag = new Array(N).fill(0);
+
+	for (let n = 0; n < N; n++) {
+		for (let k = 0; k < N; k++) {
+			let angle = (2 * Math.PI * k * n) / N;
+			analyticReal[n] += real[k] * Math.cos(angle) - imag[k] * Math.sin(angle);
+			analyticImag[n] += real[k] * Math.sin(angle) + imag[k] * Math.cos(angle);
+		}
+		analyticReal[n] /= N; // Normalize
+		analyticImag[n] /= N; // Normalize
+	}
+
+	// Return the analytic signal as an array of [real, imag] components
+	return analyticReal.map((re, i) => [re, analyticImag[i]]);
 }
 
 function pearsonCorrelation(x, y) {
@@ -83,6 +104,26 @@ function pearsonCorrelation(x, y) {
     let intercept = (sumY - slope * sumX) / n;
 
     return { correlation, slope, intercept };
+}
+
+function computePLV(phase1, phase2) {
+	let N = phase1.length;
+	if (N !== phase2.length) {
+		throw new Error("Phase arrays must have the same length.");
+	}
+
+	let sumReal = 0;
+	let sumImag = 0;
+
+	for (let i = 0; i < N; i++) {
+		let deltaPhi = phase1[i] - phase2[i];
+		sumReal += Math.cos(deltaPhi);
+		sumImag += Math.sin(deltaPhi);
+	}
+
+	let magnitude = Math.sqrt(sumReal * sumReal + sumImag * sumImag) / N; // PLV magnitude
+	let phaseLocking = Math.atan2(sumImag, sumReal); // PLV phase locking
+	return { magnitude, phaseLocking};
 }
 
 function generateGaussianNoise(noiseLvl, length){
