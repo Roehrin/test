@@ -138,4 +138,4 @@ function generateGaussianNoise(noiseLvl, length){
 }
 
 // Export functions for use in another script
-export { computeDFT, inverseDFT, analyticSignal, pearsonCorrelation, generateGaussianNoise};
+export { computeDFT, inverseDFT, analyticSignal, pearsonCorrelation, generateGaussianNoise, computePLV};

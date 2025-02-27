@@ -40,7 +40,7 @@
 		</span>
 			<span style="padding: 5px">
 			<label for="noiseLevel">Noise Level:</label>
-			<input type="range" id="noiseLevel" class="slider" min="0" max=".5" value="0.1" step="0.01">
+			<input type="range" id="noiseLevel" class="slider" min="0" max="1" value="0.1" step="0.01">
 			<span id="noiseValue">0.1</span>
 		</span>
     </div>
@@ -152,7 +152,8 @@
                 mode: 'lines',
 				type: 'scatter',
                 name: 'PSD of Sine Wave 1',
-                line: { color: 'black' }
+                line: { color: 'black' },
+				showlegend: false,
             };
 
             const freqTrace2 = {
@@ -163,7 +164,8 @@
                 mode: 'lines',
 				type: 'scatter',
                 name: 'PSD of Sine Wave 2',
-                line: { color: 'blue', dash: 'dashdot'}
+                line: { color: 'blue', dash: 'dashdot'},
+				showlegend: false,
             };
 			
 			// Create traces for phase domain signals
@@ -175,7 +177,8 @@
                 mode: 'lines',
 				type: 'scatter',
                 name: 'Phase of Sine Wave 1',
-                line: { color: 'black' }
+                line: { color: 'black' },
+				showlegend: false,
             };
 
             const phaseTrace2 = {
@@ -186,7 +189,8 @@
                 mode: 'lines',
 				type: 'scatter',
                 name: 'Phase of Sine Wave 2',
-                line: { color: 'blue', dash: 'dashdot'}
+                line: { color: 'blue', dash: 'dashdot'},
+				showlegend: false,
             };
 
             // Create scatter plot trace
@@ -198,7 +202,8 @@
                 mode: 'markers',
                 name: 'Scatter Plot',
 				type: 'scatter',
-                marker: { color: 'black' }
+                marker: { color: 'black' },
+				showlegend: false,
             };
 			
 			
@@ -223,6 +228,7 @@
 				xaxis: 'x5',
 				yaxis: 'y5',
 				name: 'Bar Plot',
+				showlegend: false,
 			};
 			
             // Define subplots layout
@@ -242,6 +248,7 @@
 				xaxis5: { domain: [w1+w2+w3+wgap, 1], anchor: 'y5'},
                 yaxis5: { title: 'correlation', side: 'right', domain: [0, 1], anchor: 'x5', range: [-1.2, 1.2]},
                 showlegend: true,
+				font: { size: 16 },
 				legend: {x: 0, xanchor: 'left', y: -.3, orientation: "h", font: { size: 16 }}
             };
 
