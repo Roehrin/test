@@ -8,36 +8,45 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0px;
         }
         .slider {
             margin: 10px 0;
         }
+		.header {
+		  position: sticky;
+		  top: 0;
+		  background: #555;
+		  color: #f1f1f1;
+		  z-index: 1;
+		}
+		.div {
+		  margin: 10px;
+		}
     </style>
 </head>
 <body>
-    <h1>Pearson correlation of two noisy signals.</h1>
-
-    <div>
-        <label for="frequency">Frequency of Sine Wave 2:</label>
-        <input type="range" id="frequency" class="slider" min="1" max="25" value="10">
-        <span id="freqValue">3 Hz</span>
-    </div>
-
-    <div>
-        <label for="phase">Phase Shift of Sine Wave 2:</label>
-        <input type="range" id="phase" class="slider" min="-175" max="180" value="0" step="5">
-        <span id="phaseValue">0 rad</span>
-    </div>
-
-    <div>
-        <label for="noiseLevel">Noise Level:</label>
-        <input type="range" id="noiseLevel" class="slider" min="0" max=".5" value="0.1" step="0.01">
-        <span id="noiseValue">0.1</span>
+	<h1>Pearson correlation of two noisy signals.</h1>
+    <div class="header" id="myHeader">
+		<span style="padding: 5px">
+			<label for="frequency">Frequency of Sine Wave 2:</label>
+			<input type="range" id="frequency" class="slider" min="1" max="25" value="10">
+			<span id="freqValue">3 Hz</span>
+		</span>
+			<span style="padding: 5px">
+			<label for="phase">Phase Shift of Sine Wave 2:</label>
+			<input type="range" id="phase" class="slider" min="-175" max="180" value="0" step="5">
+			<span id="phaseValue">0 rad</span>
+		</span>
+			<span style="padding: 5px">
+			<label for="noiseLevel">Noise Level:</label>
+			<input type="range" id="noiseLevel" class="slider" min="0" max=".5" value="0.1" step="0.01">
+			<span id="noiseValue">0.1</span>
+		</span>
     </div>
 
     <div id="plot" style="width:100%;height:600px;"></div>
-
+	
     <script type="module" async>
 		import {computeDFT, inverseDFT, generateGaussianNoise, pearsonCorrelation} from 'https://roehrin.github.io/test/js-scripts/simpleSignalProcessing.js';
         
@@ -47,7 +56,7 @@
 		var freq2 = parseFloat(document.getElementById("frequency").value);
 		var phase2 = 2*Math.PI/360*parseFloat(document.getElementById("phase").value);
 		var noiseLvl = parseFloat(document.getElementById("noiseLevel").value);
-        const time = Array.from({ length: 2*sampleRate }, (_, i) => i / sampleRate);
+        const time = Array.from({ length: sampleRate }, (_, i) => i / sampleRate);
 		
 		var w1 = .45;
 		var w2 = .23;
@@ -251,6 +260,9 @@
 
             // Update the plot
             Plotly.newPlot('plot', combinedData, layout, {responsive: true});
+			Plotly.newPlot('plot2', combinedData, layout, {responsive: true});
+			Plotly.newPlot('plot3', combinedData, layout, {responsive: true});
+			Plotly.newPlot('plot4', combinedData, layout, {responsive: true});
         }
 
         // Initial plot
